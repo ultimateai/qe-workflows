@@ -14,7 +14,7 @@ on:
 
 env:
   E2E_REPO: ${{ inputs.e2e_repo }}
-  
+
 jobs:
   test:
     runs-on: qe-runners
@@ -24,7 +24,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        project: ${{ inputs.projects }}
+        project: ${{ fromJSON(inputs.projects) }}
         shardIndex: [1, 2, 3, 4, 5]
         shardTotal: [5]
     steps:
