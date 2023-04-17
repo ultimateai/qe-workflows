@@ -7,9 +7,14 @@ on:
           required: true
           type: string
           description: "Owner and repo name containing your e2e repo like ultimateai/e2e-tests"
+      projects:
+          required: true
+          type: string
+          description: "matrix projects"
 
 env:
   E2E_REPO: ${{ inputs.e2e_repo }}
+  PROJECTS: ${{ inputs.projects }}
 
 jobs:
   test:
@@ -20,7 +25,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        project: [chromium]
+        project: ${{ env.PROJECTS }}
         shardIndex: [1, 2, 3, 4, 5]
         shardTotal: [5]
     steps:
