@@ -1,5 +1,0 @@
-{
-  "{tests,src}/**/*.{ts,tsx}": [
-    "npm run lintFix"
-  ]
-}

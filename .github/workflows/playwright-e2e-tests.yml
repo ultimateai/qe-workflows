@@ -1,0 +1,63 @@
+name: Callable playwright e2e tests
+
+on:
+  workflow_call:
+    inputs:
+      e2e_repo:
+          required: true
+          type: string
+          description: "Owner and repo name containing your e2e repo like ultimateai/e2e-tests"
+
+env:
+  E2E_REPO: ${{ inputs.e2e_repo }}
+
+jobs:
+  test:
+    runs-on: qe-runners
+    permissions:
+      contents: "read"
+      id-token: "write"
+    strategy:
+      fail-fast: false
+      matrix:
+        project: [chromium]
+        shardIndex: [1, 2, 3, 4, 5]
+        shardTotal: [5]
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions/setup-node@v3
+        with:
+          node-version-file: '.nvmrc'
+      - name: "Checkout e2e tests repository"
+        uses: actions/checkout@v3
+        with:
+          repository: ${{ env.E2E_REPO }}
+          token: ${{ secrets.QE_TOKEN }}
+      - name: Install playwright
+        run: npm ci
+      - name: Run tests
+        run: |
+          touch results.log
+          echo '```logtalk' >> results.log
+          npx playwright test --project=${{ matrix.project }} --shard=${{ matrix.shardIndex }}/${{ matrix.shardTotal }}
+          echo '```' >> results.log
+        env:
+          DASHBOARD_STAGING_ADMIN_USER_PWD: ${{ secrets.DASHBOARD_STAGING_ADMIN_USER_PWD }}
+          DASHBOARD_STAGING_CLIENT_USER_PWD: ${{ secrets.DASHBOARD_STAGING_CLIENT_USER_PWD }}
+          DASHBOARD_STAGING_CLIENT_ADMIN_PWD: ${{ secrets.DASHBOARD_STAGING_CLIENT_ADMIN_PWD }}
+          DASHBOARD_STAGING_CLIENT_EDITOR_PWD: ${{ secrets.DASHBOARD_STAGING_CLIENT_EDITOR_PWD }}
+          DASHBOARD_STAGING_PARTNER_PWD: ${{ secrets.DASHBOARD_STAGING_PARTNER_PWD }}
+          FRESHDESK_CONSUMER_PWD: ${{ secrets.FRESHDESK_CONSUMER_PWD }}
+          SLACK_BOT_USER_OAUTH_TOKEN: ${{ secrets.PLAYWRIGHT_SLACK_BOT_USER_OAUTH_TOKEN }}
+      - name: Upload test results
+        uses: actions/upload-artifact@v3
+        if: always()
+        with:
+          name: e2e-artifacts
+          path: |
+            reports/allure-result
+            test-results
+            results.log
+            /home/runner/.npm/_logs
+            playwright-report/
+          retention-days: 30
