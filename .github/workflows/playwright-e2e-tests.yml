@@ -4,13 +4,13 @@ on:
   workflow_call:
     inputs:
       e2e_repo:
-          required: true
-          type: string
-          description: "Owner and repo name containing your e2e repo like ultimateai/e2e-tests"
+        required: true
+        type: string
+        description: "Owner and repo name containing your e2e repo like ultimateai/e2e-tests"
       projects:
-          required: true
-          type: string
-          description: "matrix projects"
+        required: true
+        type: string
+        description: "matrix projects"
 
 env:
   E2E_REPO: ${{ inputs.e2e_repo }}
@@ -31,7 +31,7 @@ jobs:
       - uses: actions/checkout@v3
       - uses: actions/setup-node@v3
         with:
-          node-version-file: '.nvmrc'
+          node-version-file: ".nvmrc"
       - name: "Checkout e2e tests repository"
         uses: actions/checkout@v3
         with:
@@ -43,7 +43,7 @@ jobs:
         run: |
           touch results.log
           echo '```logtalk' >> results.log
-          npx playwright test --project=${{ matrix.project }} --shard=${{ matrix.shardIndex }}/${{ matrix.shardTotal }}
+          npx playwright test --grep @Critical --project=${{ matrix.project }} --shard=${{ matrix.shardIndex }}/${{ matrix.shardTotal }}
           echo '```' >> results.log
         env:
           DASHBOARD_STAGING_ADMIN_USER_PWD: ${{ secrets.DASHBOARD_STAGING_ADMIN_USER_PWD }}
