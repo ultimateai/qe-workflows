@@ -1,0 +1,36 @@
+name: Rollback
+
+on:
+  workflow_dispatch:
+    inputs:
+      Environment:
+        description: 'Choose in which environment to deploy your app'
+        required: true
+        default: 'staging'
+        type: choice
+        options:
+          - staging
+          - development
+          - production
+      Version:
+        description: 'Release tag you want to rollback to'
+        required: true
+        type: string
+
+
+jobs:
+  deploy:
+    uses: ultimateai/workflows/.github/workflows/rollback.yml@0.15.5
+    with:
+      ###---- Your input variables, ask anything you don't understand, but you can play around ----##
+      app_squad: backend #Please update with your squad!
+      slack_channel_id: '#engineering-announcements' #You have to make sure that github-actions-deployments bot is invited to your channel! This field is optional - no field, no slack notif =)
+      # app_names: "dashboard-backend,dashboard-backend-internal,intent-health-checker" #In case of a 1repo to Napps situation, please use app_names and update deployment_env folder
+      ###---- Platform input variables, I recommend leaving them untouched.  ----##
+      image_repo: eu.gcr.io/ultimateai-169214
+      environment: ${{ github.event.inputs.Environment }}
+      version: ${{ github.event.inputs.Version }}
+      github_email: 86783263+ultimateai-bot@users.noreply.github.com
+      github_user: ultimateai-bot
+      k8s_manifests_repo: ultimateai/k8s-manifests
+    secrets: inherit
