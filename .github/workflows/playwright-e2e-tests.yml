@@ -50,7 +50,7 @@ jobs:
         run: |
           touch results.log
           echo '```logtalk' >> results.log
-          npx playwright test --grep @Sanity --project=${{ matrix.project }} --shard=${{ matrix.shardIndex }}/${{ matrix.shardTotal }}
+          npx playwright test --grep @Critical --project=${{ matrix.project }} --shard=${{ matrix.shardIndex }}/${{ matrix.shardTotal }}
           echo '```' >> results.log
         env:
           DASHBOARD_STAGING_ADMIN_USER_PWD: ${{ secrets.DASHBOARD_STAGING_ADMIN_USER_PWD }}
