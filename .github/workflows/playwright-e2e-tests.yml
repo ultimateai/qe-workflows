@@ -16,16 +16,11 @@ on:
         type: string
         description: "slack channel for e2e tests notification"
         default: "#plt-239"
-      slack_deployment_thread_ts:
-        required: false 
-        type: string
-        description: thread id of the original deployment message to be able to supply additional playwright information within the thread
 
 
 env:
   E2E_REPO: ${{ inputs.e2e_repo }}
   SLACK_CHANNEL: ${{ inputs.slack_channel }}
-  SLACK_DEPLOYMENT_THREAD_TS: ${{ inputs.slack_deployment_thread_ts }}
 
 jobs:
   test:
@@ -78,31 +73,3 @@ jobs:
             /home/runner/.npm/_logs
             playwright-report/
           retention-days: 30
-      
-      - name: Test
-        id: check_thread_ts
-        run: |
-          echo ${{ env.SLACK_DEPLOYMENT_THREAD_TS }}
-
-      - uses: slackapi/slack-github-action@v1.23.0
-        name: Slack notification
-        if: ${{ env.SLACK_DEPLOYMENT_THREAD_TS }}
-        id: slack_notif
-        with:
-          channel-id: ${{ env.SLACK_CHANNEL }}
-          payload: |-
-            {
-              "text": "Playwright results",
-              "thread_ts": "${{ env.SLACK_DEPLOYMENT_THREAD_TS }}",
-              "blocks": [
-                {
-                  "type": "section",
-                  "text": {
-                    "type": "mrkdwn",
-                    "text": "Good morning Im a message nice to meet you"
-                  }
-                }
-              ]
-            }
-        env:
-          SLACK_BOT_TOKEN: ${{ secrets.SLACK_GITHUB_BOT_TOKEN }}
