@@ -64,4 +64,4 @@ jobs:
             results.log
             /home/runner/.npm/_logs
             playwright-report/
-          retention-days: 30
+          retention-days: 1
