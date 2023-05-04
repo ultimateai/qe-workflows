@@ -57,9 +57,8 @@ jobs:
         uses: actions/upload-artifact@v3
         if: always()
         with:
-          name: e2e-artifacts
+          name: e2e-artifacts-${{ matrix.shardIndex }}_${{ matrix.shardTotal }}
           path: |
-            reports/allure-result
             test-results
             results.log
             /home/runner/.npm/_logs
