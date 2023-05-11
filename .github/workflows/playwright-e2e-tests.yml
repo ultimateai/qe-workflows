@@ -107,4 +107,4 @@ jobs:
         run: |
           currentDate=$(date '+%Y%m%d')
           echo "Your artifact is in [this gcp bucket](https://console.cloud.google.com/storage/browser/${{ env.BUCKET_NAME }}/${{ github.event.repository.name }}/$currentDate/) " >> $GITHUB_STEP_SUMMARY
-          echo "bucket_link=gs://${{ env.BUCKET_NAME }}/${{ github.event.repository.name }}/$currentDate/" >> $GITHUB_OUTPUT
+          echo "bucket_link=https://console.cloud.google.com/storage/browser/${{ env.BUCKET_NAME }}/${{ github.event.repository.name }}/$currentDate/" >> $GITHUB_OUTPUT
