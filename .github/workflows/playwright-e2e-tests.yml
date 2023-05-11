@@ -11,6 +11,10 @@ on:
         required: true
         type: string
         description: "matrix projects"
+      e2e_bucket_name:
+        required: true
+        type: string
+        description: "Name of bucket in which to store e2e results"
     outputs:
       bucket_link:
         description: "The link of the bucket containing the zip with the results"
@@ -18,6 +22,7 @@ on:
 
 env:
   E2E_REPO: ${{ inputs.e2e_repo }}
+  BUCKET_NAME: ${{ inputs.e2e_bucket_name }}
 
 jobs:
   test:
