@@ -11,6 +11,10 @@ on:
         required: true
         type: string
         description: "matrix projects"
+    outputs:
+      bucket_link:
+        description: "The link of the bucket containing the zip with the results"
+        value: ${{ jobs.announce.outputs.bucket_link }}
 
 env:
   E2E_REPO: ${{ inputs.e2e_repo }}
@@ -79,10 +83,14 @@ jobs:
           currentTime=$(date '+%H:%M')
           zip -r playwright-results-${{ matrix.shardIndex }}_${{ matrix.shardTotal }}-$currentTime.zip test-results/ results.log playwright-report/ /home/runner/.npm/_logs
           gcloud alpha storage cp playwright-results-${{ matrix.shardIndex }}_${{ matrix.shardTotal }}-$currentTime.zip gs://${{ env.BUCKET_NAME }}/${{ github.event.repository.name }}/$currentDate/
+          
+  
   announce:
     runs-on: qe-runners
     needs: test
     if: always()
+    outputs:
+      bucket_link: ${{ steps.announcement.outputs.bucket_link }}
     permissions:
       contents: "read"
       id-token: "write"
@@ -90,6 +98,8 @@ jobs:
       - uses: actions/checkout@v3
       - name: Announce in job
         if: always()
+        id: announcement
         run: |
           currentDate=$(date '+%Y%m%d')
           echo "Your artifact is in [this gcp bucket](https://console.cloud.google.com/storage/browser/${{ env.BUCKET_NAME }}/${{ github.event.repository.name }}/$currentDate/) " >> $GITHUB_STEP_SUMMARY
+          echo "bucket_link=gs://${{ env.BUCKET_NAME }}/${{ github.event.repository.name }}/$currentDate/" >> $GITHUB_OUTPUT
