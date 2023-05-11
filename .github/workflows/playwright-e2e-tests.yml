@@ -53,14 +53,43 @@ jobs:
           DASHBOARD_STAGING_PARTNER_PWD: ${{ secrets.DASHBOARD_STAGING_PARTNER_PWD }}
           FRESHDESK_CONSUMER_PWD: ${{ secrets.FRESHDESK_CONSUMER_PWD }}
           SLACK_BOT_USER_OAUTH_TOKEN: ${{ secrets.PLAYWRIGHT_SLACK_BOT_USER_OAUTH_TOKEN }}
-      - name: Upload test results
-        uses: actions/upload-artifact@v3
+
+      - name: 'Google Auth'
         if: always()
+        id: 'auth'
+        uses: 'google-github-actions/auth@v1'
         with:
-          name: e2e-artifacts-${{ matrix.shardIndex }}_${{ matrix.shardTotal }}
-          path: |
-            test-results
-            results.log
-            /home/runner/.npm/_logs
-            playwright-report/
-          retention-days: 30
+          token_format: "access_token"
+          workload_identity_provider: '${{ secrets.WIF_PROVIDER_NAME }}'
+          service_account: '${{ secrets.GSA_QE_EMAIL }}'
+          project_id: '${{ env.PROJECT_ID }}'
+      
+      - name: 'Set up Cloud SDK'
+        if: always()
+        uses: 'google-github-actions/setup-gcloud@v1'
+        with:
+          project_id: '${{ env.PROJECT_ID }}'
+          install_components: 'alpha'
+
+      - name: Upload test results
+        if: always()
+        id: upload_to_bucket
+        run: |
+          currentDate=$(date '+%Y%m%d')
+          currentTime=$(date '+%H:%M')
+          zip -r playwright-results-${{ matrix.shardIndex }}_${{ matrix.shardTotal }}-$currentTime.zip test-results/ results.log playwright-report/ /home/runner/.npm/_logs
+          gcloud alpha storage cp playwright-results-${{ matrix.shardIndex }}_${{ matrix.shardTotal }}-$currentTime.zip gs://${{ env.BUCKET_NAME }}/${{ github.event.repository.name }}/$currentDate/
+  announce:
+    runs-on: qe-runners
+    needs: test
+    if: always()
+    permissions:
+      contents: "read"
+      id-token: "write"
+    steps:
+      - uses: actions/checkout@v3
+      - name: Announce in job
+        if: always()
+        run: |
+          currentDate=$(date '+%Y%m%d')
+          echo "Your artifact is in [this gcp bucket](https://console.cloud.google.com/storage/browser/${{ env.BUCKET_NAME }}/${{ github.event.repository.name }}/$currentDate/) " >> $GITHUB_STEP_SUMMARY
