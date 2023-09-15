@@ -1,24 +1,28 @@
 name: Callable playwright e2e tests
 
 on:
-  workflow_call:
-    inputs:
-      e2e_repo:
-        required: true
-        type: string
-        description: "Owner and repo name containing your e2e repo like ultimateai/e2e-tests"
-      projects:
-        required: true
-        type: string
-        description: "matrix projects"
-      e2e_bucket_name:
-        required: true
-        type: string
-        description: "Name of bucket in which to store e2e results"
-    outputs:
-      bucket_link:
-        description: "The link of the bucket containing the zip with the results"
-        value: ${{ jobs.announce.outputs.bucket_link }}
+  # workflow_call:
+  #   inputs:
+  #     e2e_repo:
+  #       required: true
+  #       type: string
+  #       description: "Owner and repo name containing your e2e repo like ultimateai/e2e-tests"
+  #     projects:
+  #       required: true
+  #       type: string
+  #       description: "matrix projects"
+  #     e2e_bucket_name:
+  #       required: true
+  #       type: string
+  #       description: "Name of bucket in which to store e2e results"
+  #   outputs:
+  #     bucket_link:
+  #       description: "The link of the bucket containing the zip with the results"
+  #       value: ${{ jobs.announce.outputs.bucket_link }}
+
+  push:
+    branches:
+      - QAT-400-merged-test-reports
 
 env:
   E2E_REPO: ${{ inputs.e2e_repo }}
@@ -63,22 +67,54 @@ jobs:
           FRESHDESK_CONSUMER_PWD: ${{ secrets.FRESHDESK_CONSUMER_PWD }}
           SLACK_BOT_USER_OAUTH_TOKEN: ${{ secrets.PLAYWRIGHT_SLACK_BOT_USER_OAUTH_TOKEN }}
 
-      - name: 'Google Auth'
+      - name: Upload blob (shard) reports to GitHub Actions Artifacts
         if: always()
-        id: 'auth'
-        uses: 'google-github-actions/auth@v1'
+        uses: actions/upload-artifact@v3
+        with:
+          name: all-blob-reports
+          path: blob-report
+          retention-days: 1
+
+  merge-reports:
+    if: always()
+    needs: test
+    runs-on: qe-runners
+    permissions:
+      contents: "read"
+      id-token: "write"
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions/setup-node@v3
+        with:
+          node-version-file: ".nvmrc"
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Download blob reports from GitHub Actions Artifacts
+        uses: actions/download-artifact@v3
+        with:
+          name: all-blob-reports
+          path: all-blob-reports
+
+      - name: Merge into HTML Report
+        run: npx playwright merge-reports --reporter html ./all-blob-reports
+
+      - name: "Google Auth"
+        if: always()
+        id: "auth"
+        uses: "google-github-actions/auth@v1"
         with:
           token_format: "access_token"
-          workload_identity_provider: '${{ secrets.WIF_PROVIDER_NAME }}'
-          service_account: '${{ secrets.GSA_QE_EMAIL }}'
-          project_id: '${{ env.PROJECT_ID }}'
-      
-      - name: 'Set up Cloud SDK'
+          workload_identity_provider: "${{ secrets.WIF_PROVIDER_NAME }}"
+          service_account: "${{ secrets.GSA_QE_EMAIL }}"
+          project_id: "${{ env.PROJECT_ID }}"
+
+      - name: "Set up Cloud SDK"
         if: always()
-        uses: 'google-github-actions/setup-gcloud@v1'
+        uses: "google-github-actions/setup-gcloud@v1"
         with:
-          project_id: '${{ env.PROJECT_ID }}'
-          install_components: 'alpha'
+          project_id: "${{ env.PROJECT_ID }}"
+          install_components: "alpha"
 
       - name: Upload test results
         if: always()
@@ -86,25 +122,24 @@ jobs:
         run: |
           currentDate=$(date '+%Y%m%d')
           currentTime=$(date '+%H:%M')
-          zip -r playwright-results-${{ matrix.shardIndex }}_${{ matrix.shardTotal }}-$currentTime.zip test-results/ results.log playwright-report/ /home/runner/.npm/_logs
-          gcloud alpha storage cp playwright-results-${{ matrix.shardIndex }}_${{ matrix.shardTotal }}-$currentTime.zip gs://${{ env.BUCKET_NAME }}/${{ github.event.repository.name }}/$currentDate/
-          
-  
-  announce:
-    runs-on: qe-runners
-    needs: test
-    if: always()
-    outputs:
-      bucket_link: ${{ steps.announcement.outputs.bucket_link }}
-    permissions:
-      contents: "read"
-      id-token: "write"
-    steps:
-      - uses: actions/checkout@v3
-      - name: Announce in job
-        if: always()
-        id: announcement
-        run: |
-          currentDate=$(date '+%Y%m%d')
-          echo "Your artifact is in [this gcp bucket](https://console.cloud.google.com/storage/browser/${{ env.BUCKET_NAME }}/${{ github.event.repository.name }}/$currentDate/) " >> $GITHUB_STEP_SUMMARY
-          echo "bucket_link=https://console.cloud.google.com/storage/browser/${{ env.BUCKET_NAME }}/${{ github.event.repository.name }}/$currentDate/" >> $GITHUB_OUTPUT
+          zip -r playwright-all-results-$currentTime.zip test-results/ results.log playwright-report/ /home/runner/.npm/_logs
+          gcloud alpha storage cp playwright-all-results-$currentTime.zip gs://${{ env.BUCKET_NAME }}/${{ github.event.repository.name }}/$currentDate/
+
+  # announce:
+  #   runs-on: qe-runners
+  #   needs: merge-reports
+  #   if: always()
+  #   outputs:
+  #     bucket_link: ${{ steps.announcement.outputs.bucket_link }}
+  #   permissions:
+  #     contents: "read"
+  #     id-token: "write"
+  #   steps:
+  #     - uses: actions/checkout@v3
+  #     - name: Announce in job
+  #       if: always()
+  #       id: announcement
+  #       run: |
+  #         currentDate=$(date '+%Y%m%d')
+  #         echo "Your artifact is in [this gcp bucket](https://console.cloud.google.com/storage/browser/${{ env.BUCKET_NAME }}/${{ github.event.repository.name }}/$currentDate/) " >> $GITHUB_STEP_SUMMARY
+  #         echo "bucket_link=https://console.cloud.google.com/storage/browser/${{ env.BUCKET_NAME }}/${{ github.event.repository.name }}/$currentDate/" >> $GITHUB_OUTPUT
