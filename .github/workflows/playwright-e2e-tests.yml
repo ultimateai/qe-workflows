@@ -41,7 +41,6 @@ env:
   bot_settings: "creation-fe"
   bot_creation: "creation-fe"
   org_management: "creation-fe"
-  actions: "crm"
   chat_automation: "crm"
   ticket_automation: "crm"
   integration: "crm"
