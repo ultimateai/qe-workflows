@@ -23,9 +23,10 @@ on:
 env:
   E2E_REPO: ${{ inputs.e2e_repo }}
   BUCKET_NAME: ${{ inputs.e2e_bucket_name }}
-  dlb: "cddev"
-  ooh: "cddev"
-  conversation_logs: "cddev"
+  actions: "conversation-design-fe"
+  dlb: "conversation-design-fe"
+  ooh: "conversation-design-fe"
+  conversation_logs: "conversation-design-fe"
   intents: "creation-fe"
   expressions: "creation-fe"
   entities: "creation-fe"
