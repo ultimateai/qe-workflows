@@ -23,12 +23,13 @@ on:
 env:
   E2E_REPO: ${{ inputs.e2e_repo }}
   BUCKET_NAME: ${{ inputs.e2e_bucket_name }}
-  dlb: "cddev"
-  ooh: "cddev"
-  conversation_logs: "cddev"
-  intents: "creation-fe"
+  actions: "conversation-design-fe"
+  dlb: "conversation-design-fe"
+  ooh: "conversation-design-fe"
+  conversation_logs: "conversation-design-fe"
   expressions: "creation-fe"
-  entities: "creation-fe"
+  entities: "conversation-design-fe"
+  intents: "creation-fe"
   login: "creation-fe"
   logout: "creation-fe"
   automation_replies: "creation-fe"
@@ -40,7 +41,6 @@ env:
   bot_settings: "creation-fe"
   bot_creation: "creation-fe"
   org_management: "creation-fe"
-  actions: "crm"
   chat_automation: "crm"
   ticket_automation: "crm"
   integration: "crm"
