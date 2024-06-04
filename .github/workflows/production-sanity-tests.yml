@@ -23,14 +23,11 @@ jobs:
   production-test:
     name: 'Production Sanity Tests'
     runs-on: qe-runners
-    if: github.event.deployment_status.state == 'success'
     permissions:
       contents: "read"
       id-token: "write"
     strategy:
       fail-fast: false
-    #   matrix:
-    #     project: ${{ fromJSON(inputs.projects) }}
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
