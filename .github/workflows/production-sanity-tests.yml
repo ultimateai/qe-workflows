@@ -7,15 +7,7 @@ on:
         required: true
         type: string
         description: "Owner and repo name containing your production test like ultimateai/e2e-tests"
-    #   projects:
-    #     required: true
-    #     type: string
-    #     description: "matrix projects"
-    # outputs:
-    #   bucket_link:
-    #     description: "The link of the bucket containing the zip with the results"
-    #     value: ${{ jobs.announce.outputs.bucket_link }}
-
+    
 env:
   E2E_REPO: ${{ inputs.e2e_repo }}
 
