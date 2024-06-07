@@ -1,0 +1,52 @@
+name: Production Sanity Tests
+
+on:
+  workflow_call:
+    inputs:
+      e2e_repo:
+        required: true
+        type: string
+        description: "Owner and repo name containing your production test like ultimateai/e2e-tests"
+    
+env:
+  E2E_REPO: ${{ inputs.e2e_repo }}
+
+jobs:
+  production-test:
+    name: 'Production Sanity Tests'
+    runs-on: qe-runners
+    permissions:
+      contents: "read"
+      id-token: "write"
+    strategy:
+      fail-fast: false
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: ".nvmrc"
+      - name: "Checkout e2e-tests repository"
+        uses: actions/checkout@v4
+        with:
+          repository: ${{ env.E2E_REPO }}
+          token: ${{ secrets.QE_TOKEN }}
+      - name: Install playwright
+        run: npm ci
+      - name: Run tests
+        run: |
+          touch results.txt
+          npx playwright test --project=production
+          echo "Test results for Production test" > results.txt
+        env:
+          DASHBOARD_PRODUCTION_USER_PWD: ${{secrets.DASHBOARD_PRODUCTION_USER_PWD}}
+          SLACK_BOT_USER_OAUTH_TOKEN: ${{ secrets.PLAYWRIGHT_SLACK_BOT_USER_OAUTH_TOKEN }}
+
+      - name: Upload test report
+        # if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: production_test_report
+          path: results.txt
+          retention-days: 1
+    
+    
