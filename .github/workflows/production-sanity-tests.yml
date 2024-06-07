@@ -43,7 +43,7 @@ jobs:
       - name: Run tests
         run: |
           touch results.txt
-          npx playwright test --config=./playwright.production.config.ts
+          npx playwright test --project=production
           echo "Test results for Production test" > results.txt
         env:
           DASHBOARD_PRODUCTION_USER_PWD: ${{secrets.DASHBOARD_PRODUCTION_USER_PWD}}
