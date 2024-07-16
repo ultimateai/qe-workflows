@@ -11,7 +11,17 @@ on:
       bucket_link:
         description: "The link of the bucket containing the zip with the results"
         value: ${{ jobs.announce.outputs.bucket_link }}
-
+  workflow_dispatch:
+    inputs:
+      e2e_repo:
+        description: "Owner and repo name containing your production test like ultimateai/e2e-tests"
+        required: true
+        default: "ultimateai/e2e-tests"
+      e2e_bucket_name:
+        description: "The name of the bucket to upload the test results"
+        required: true
+        default: "ultimate-e2e-artifacts"
+        
 env:
   E2E_REPO: ${{ inputs.e2e_repo }}
   BUCKET_NAME: ${{ inputs.e2e_bucket_name }}
