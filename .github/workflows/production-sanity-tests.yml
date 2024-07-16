@@ -11,20 +11,10 @@ on:
       bucket_link:
         description: "The link of the bucket containing the zip with the results"
         value: ${{ jobs.announce.outputs.bucket_link }}
-  workflow_dispatch:
-    inputs:
-      e2e_repo:
-        description: "Owner and repo name containing your production test like ultimateai/e2e-tests"
-        required: true
-        default: "ultimateai/e2e-tests"
-      e2e_bucket_name:
-        description: "The name of the bucket to upload the test results"
-        required: true
-        default: "ultimate-e2e-artifacts"
         
 env:
-  E2E_REPO: ${{ github.event.inputs.e2e_repo || inputs.e2e_repo }}
-  BUCKET_NAME: ${{ github.event.inputs.e2e_bucket_name || inputs.e2e_bucket_name }}
+  E2E_REPO: ${{ inputs.e2e_repo }}
+  BUCKET_NAME: ${{ inputs.e2e_bucket_name }}
   PROJECT_ID: "common-main-cfc4"
 
 jobs:
@@ -50,9 +40,9 @@ jobs:
         run: npm ci
       - name: Run tests
         run: |
-          touch results.txt
-          npx playwright test --project=production
-          echo "Test results for Production test" > results.txt
+          touch results.json
+          npx playwright test --project=production --reporter=html,json
+          echo "Test results for Production test" > results.log
         env:
           DASHBOARD_PRODUCTION_USER_PWD: ${{secrets.DASHBOARD_PRODUCTION_USER_PWD}}
           SLACK_BOT_USER_OAUTH_TOKEN: ${{ secrets.PLAYWRIGHT_SLACK_BOT_USER_OAUTH_TOKEN }}
@@ -62,7 +52,9 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: production_test_report
-          path: results.txt
+          path: |
+            playwright-report/**
+            results.json
           retention-days: 1
   
   upload-report-to-bucket:
