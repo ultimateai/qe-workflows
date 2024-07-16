@@ -23,8 +23,8 @@ on:
         default: "ultimate-e2e-artifacts"
         
 env:
-  E2E_REPO: ${{ inputs.e2e_repo }}
-  BUCKET_NAME: ${{ inputs.e2e_bucket_name }}
+  E2E_REPO: ${{ github.event.inputs.e2e_repo || inputs.e2e_repo }}
+  BUCKET_NAME: ${{ github.event.inputs.e2e_bucket_name || inputs.e2e_bucket_name }}
   PROJECT_ID: "common-main-cfc4"
 
 jobs:
