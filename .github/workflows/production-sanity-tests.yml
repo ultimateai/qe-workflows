@@ -19,7 +19,6 @@ on:
       bucket_link:
         description: "The link of the bucket containing the zip with the results"
         value: ${{ jobs.announce.outputs.bucket_link }}
-  workflow_dispatch:
 
 env:
   E2E_REPO: ${{ inputs.e2e_repo }}
