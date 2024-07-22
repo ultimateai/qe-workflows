@@ -19,7 +19,8 @@ on:
       bucket_link:
         description: "The link of the bucket containing the zip with the results"
         value: ${{ jobs.announce.outputs.bucket_link }}
-        
+  workflow_dispatch:
+
 env:
   E2E_REPO: ${{ inputs.e2e_repo }}
   BUCKET_NAME: ${{ inputs.e2e_bucket_name }}
@@ -35,8 +36,8 @@ jobs:
     strategy:
       fail-fast: false
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@v3
+      - uses: actions/setup-node@v3
         with:
           node-version-file: ".nvmrc"
       - name: "Checkout e2e-tests repository"
@@ -48,9 +49,8 @@ jobs:
         run: npm ci
       - name: Run tests
         run: |
-          touch results.json
           npx playwright test --project=production --reporter=html,json
-          echo "Test results for Production test" > results.log
+          echo "Test results for Production test run completed" >> results.log
         env:
           DASHBOARD_PRODUCTION_USER_PWD: ${{secrets.DASHBOARD_PRODUCTION_USER_PWD}}
           SLACK_BOT_USER_OAUTH_TOKEN: ${{ secrets.PLAYWRIGHT_SLACK_BOT_USER_OAUTH_TOKEN }}
@@ -60,9 +60,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: production-test-report
-          path: |
-            playwright-report/**
-            results.json
+          path: blob-report
           retention-days: 1
   
   upload-report-to-bucket:
@@ -78,25 +76,39 @@ jobs:
           name: production-test-report
           path: production-test-report
 
-      - name: "Google Auth"
+      - name: Google Auth
         if: always()
-        id: "auth"
-        uses: "google-github-actions/auth@v2"
+        id: auth
+        uses: google-github-actions/auth@v1
         with:
-          token_format: "access_token"
-          workload_identity_provider: "${{ secrets.WIF_PROVIDER_NAME }}"
-          service_account: "${{ secrets.GSA_QE_EMAIL }}"
-          project_id: "${{ env.PROJECT_ID }}"
-  
-      - name: Upload test results
+          token_format: access_token
+          workload_identity_provider: '${{ secrets.WIF_PROVIDER_NAME }}'
+          service_account: '${{ secrets.GSA_QE_EMAIL }}'
+          project_id: '${{ env.PROJECT_ID }}'
+
+      - name: Set up Cloud SDK
         if: always()
-        id: upload_to_bucket
+        uses: google-github-actions/setup-gcloud@v1
+        with:
+          project_id: '${{ env.PROJECT_ID }}'
+          install_components: alpha
+  
+      - name: Get current date
         run: |
           currentDate=$(date '+%Y%m%d')
-          currentTime=$(date '+%H:%M')
-          zip -r playwright-all-results-$currentTime.zip test-results/ results.log playwright-report/ /home/runner/.npm/_logs
-          gcloud alpha storage cp playwright-all-results-$currentTime.zip gs://${{ env.BUCKET_NAME }}/${{ github.event.repository.name }}/$currentDate/
-  
+          echo "CURRENT_DATE=$(date '+%Y%m%d')" >> $GITHUB_ENV
+
+      - name: Upload test results
+        uses: google-github-actions/upload-cloud-storage@v2
+        with:
+          gzip: false
+          path: playwright-report/
+          destination: >-
+            ${{ env.BUCKET_NAME }}/${{ github.event.repository.name }}/${{
+            env.CURRENT_DATE }}/${{ github.run_id }}/on-demand/
+          if: always()
+          id: upload_to_bucket
+
   announce:
     runs-on: qe-runners
     needs: upload-report-to-bucket
