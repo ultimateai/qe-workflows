@@ -11,7 +11,7 @@ on:
       #   required: true
       #   type: string
       #   description: "Name of bucket in which to store e2e results"
-      # project_id:
+      # e2e_bucket_project_id:
       #   required: true
       #   type: string
       #   description: "GCP Project ID"      
@@ -23,7 +23,7 @@ on:
 env:
   E2E_REPO: ${{ inputs.e2e_repo }}
   # BUCKET_NAME: ${{ inputs.e2e_bucket_name }}
-  # PROJECT_ID: ${{inputs.project_id}}
+  # E2E_BUCKET_PROJECT_ID: ${{inputs.e2e_bucket_project_id}}
 
 jobs:
   production-test:
@@ -90,13 +90,13 @@ jobs:
           token_format: access_token
           workload_identity_provider: '${{ secrets.WIF_PROVIDER_NAME }}'
           service_account: '${{ secrets.GSA_QE_EMAIL }}'
-          project_id: '${{ secrets.PROJECT_ID }}'
+          e2e_bucket_project_id: '${{ secrets.E2E_BUCKET_PROJECT_ID }}'
 
       - name: Set up Cloud SDK
         if: always()
         uses: google-github-actions/setup-gcloud@v1
         with:
-          project_id: '${{ secrets.PROJECT_ID }}'
+          e2e_bucket_project_id: '${{ secrets.E2E_BUCKET_PROJECT_ID }}'
           install_components: alpha
   
       - name: Get current date
