@@ -47,7 +47,8 @@ jobs:
       - name: Install playwright
         run: npm ci
       - name: Run tests
-        run: |
+        run: >-
+          PLAYWRIGHT_JSON_OUTPUT_NAME=results.json
           npx playwright test --project=production --reporter=html,json
           echo "Test results for Production test" > results.log
         env:
@@ -59,7 +60,9 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: production-test-report
-          path: blob-report
+          path: |
+            playwright-report/**
+            results.json
           retention-days: 1
   
   upload-report-to-bucket:
