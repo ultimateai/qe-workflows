@@ -22,7 +22,7 @@ on:
 
 env:
   E2E_REPO: ${{ inputs.e2e_repo }}
-  # BUCKET_NAME: ${{ inputs.e2e_bucket_name }}
+  BUCKET_NAME: ${{ inputs.e2e_bucket_name }}
   # E2E_BUCKET_PROJECT_ID: ${{inputs.e2e_bucket_project_id}}
 
 jobs:
