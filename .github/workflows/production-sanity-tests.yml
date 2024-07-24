@@ -110,7 +110,7 @@ jobs:
         uses: google-github-actions/upload-cloud-storage@v1
         with:
           gzip: false
-          path: playwright-report/
+          path: production-test-report/
           destination: >-
             ${{ secrets.E2E_BUCKET_NAME }}/e2e-tests/${{
             env.CURRENT_DATE }}/${{ github.run_id }}/on-demand/
