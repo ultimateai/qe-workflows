@@ -14,6 +14,7 @@ on:
 
 env:
   E2E_REPO: ${{ inputs.e2e_repo }}
+  BUCKET_NAME: "ultimate-e2e-artifacts"
 
 jobs:
   production-test:
@@ -96,7 +97,7 @@ jobs:
           gzip: false
           path: production-test-report/
           destination: >-
-            ${{ secrets.E2E_BUCKET_NAME }}/e2e-tests/${{
+            ${{ env.BUCKET_NAME }}/e2e-tests/${{
             env.CURRENT_DATE }}/${{ github.run_id }}/on-demand/
 
   announce:
@@ -115,5 +116,5 @@ jobs:
         id: announcement
         run: |
           currentDate=$(date '+%Y%m%d')
-          echo "Your artifact is in [this gcp bucket](https://console.cloud.google.com/storage/browser/${{ secrets.E2E_BUCKET_NAME }}/e2e-tests/$currentDate/) " >> $GITHUB_STEP_SUMMARY
-          echo "bucket_link=https://console.cloud.google.com/storage/browser/${{ secrets.E2E_BUCKET_NAME }}/e2e-tests/$currentDate/" >> $GITHUB_OUTPUT
+          echo "Your artifact is in [this gcp bucket](https://console.cloud.google.com/storage/browser/${{ env.BUCKET_NAME }}/e2e-tests/$currentDate/) " >> $GITHUB_STEP_SUMMARY
+          echo "bucket_link=https://console.cloud.google.com/storage/browser/${{ env.BUCKET_NAME }}/e2e-tests/$currentDate/" >> $GITHUB_OUTPUT
