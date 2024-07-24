@@ -48,9 +48,11 @@ jobs:
         run: npm ci
       - name: Run tests
         run: |
+          touch results.log
+          echo '```logtalk' >> results.log
           PLAYWRIGHT_JSON_OUTPUT_NAME=results.json
           npx playwright test --project=production --reporter=html,json
-          echo "Test results for Production test" > results.log
+          echo '```' >> results.log
         env:
           DASHBOARD_PRODUCTION_USER_PWD: ${{secrets.DASHBOARD_PRODUCTION_USER_PWD}}
           SLACK_BOT_USER_OAUTH_TOKEN: ${{ secrets.PLAYWRIGHT_SLACK_BOT_USER_OAUTH_TOKEN }}
@@ -60,9 +62,7 @@ jobs:
         uses: actions/upload-artifact@v3
         with:
           name: production-test-report
-          path: |
-            playwright-report/**
-            results.json
+          path: production-test-report
           retention-days: 1
   
   upload-report-to-bucket:
@@ -75,12 +75,12 @@ jobs:
       - name: Download test reports from GitHub Actions Artifacts
         uses: actions/download-artifact@v3
         with:
-          # name: production-test-report
-          # path: production-test-report
           name: production-test-report
-          path: |
-            playwright-report/**
-            results.json
+          path: production-test-report
+          # name: production-test-report
+          # path: |
+          #   playwright-report/**
+          #   results.json
 
       - name: Google Auth
         if: always()
@@ -104,16 +104,24 @@ jobs:
           currentDate=$(date '+%Y%m%d')
           echo "CURRENT_DATE=$(date '+%Y%m%d')" >> $GITHUB_ENV
 
+      # - name: Upload test results
+      #   uses: google-github-actions/upload-cloud-storage@v1
+      #   with:
+      #     gzip: false
+      #     path: playwright-report/
+      #     destination: >-
+      #       ${{ secrets.E2E_BUCKET_NAME }}/e2e-tests/${{
+      #       env.CURRENT_DATE }}/${{ github.run_id }}/on-demand/
+      #     if: always()
+      #     id: upload_to_bucket
       - name: Upload test results
-        uses: google-github-actions/upload-cloud-storage@v1
-        with:
-          gzip: false
-          path: playwright-report/
-          destination: >-
-            ${{ secrets.E2E_BUCKET_NAME }}/e2e-tests/${{
-            env.CURRENT_DATE }}/${{ github.run_id }}/on-demand/
-          if: always()
-          id: upload_to_bucket
+        if: always()
+        id: upload_to_bucket
+        run: |
+          currentDate=$(date '+%Y%m%d')
+          currentTime=$(date '+%H:%M')
+          zip -r playwright-all-results-$currentTime.zip test-results/ results.log playwright-report/ /home/runner/.npm/_logs
+          gcloud alpha storage cp playwright-all-results-$currentTime.zip gs://${{ env.BUCKET_NAME }}/${{ github.event.repository.name }}/$currentDate/
 
   announce:
     runs-on: qe-runners
