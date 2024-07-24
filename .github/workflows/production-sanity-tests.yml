@@ -11,7 +11,7 @@ on:
       #   required: true
       #   type: string
       #   description: "Name of bucket in which to store e2e results"
-      # e2e_bucket_project_id:
+      # project_id:
       #   required: true
       #   type: string
       #   description: "GCP Project ID"      
@@ -23,7 +23,7 @@ on:
 env:
   E2E_REPO: ${{ inputs.e2e_repo }}
   # BUCKET_NAME: ${{ inputs.e2e_bucket_name }}
-  # E2E_BUCKET_PROJECT_ID: ${{inputs.e2e_bucket_project_id}}
+  # PROJECT_ID: ${{inputs.project_id}}
 
 jobs:
   production-test:
@@ -48,11 +48,9 @@ jobs:
         run: npm ci
       - name: Run tests
         run: |
-          touch results.log
-          echo '```logtalk' >> results.log
           PLAYWRIGHT_JSON_OUTPUT_NAME=results.json
           npx playwright test --project=production --reporter=html,json
-          echo '```' >> results.log
+          echo "Test results for Production test" > results.log
         env:
           DASHBOARD_PRODUCTION_USER_PWD: ${{secrets.DASHBOARD_PRODUCTION_USER_PWD}}
           SLACK_BOT_USER_OAUTH_TOKEN: ${{ secrets.PLAYWRIGHT_SLACK_BOT_USER_OAUTH_TOKEN }}
@@ -62,7 +60,9 @@ jobs:
         uses: actions/upload-artifact@v3
         with:
           name: production-test-report
-          path: production-test-report
+          path: |
+            playwright-report/**
+            results.json
           retention-days: 1
   
   upload-report-to-bucket:
@@ -75,12 +75,14 @@ jobs:
       - name: Download test reports from GitHub Actions Artifacts
         uses: actions/download-artifact@v3
         with:
-          name: production-test-report
-          path: production-test-report
           # name: production-test-report
-          # path: |
-          #   playwright-report/**
-          #   results.json
+          # path: production-test-report
+          name: production-test-report
+          path: |
+            playwright-report/**
+            results.json
+      - name: List files
+        run: ls -al playwright-report/
 
       - name: Google Auth
         if: always()
@@ -90,13 +92,13 @@ jobs:
           token_format: access_token
           workload_identity_provider: '${{ secrets.WIF_PROVIDER_NAME }}'
           service_account: '${{ secrets.GSA_QE_EMAIL }}'
-          e2e_bucket_project_id: '${{ secrets.E2E_BUCKET_PROJECT_ID }}'
+          project_id: '${{ secrets.E2E_BUCKET_PROJECT_ID }}'
 
       - name: Set up Cloud SDK
         if: always()
         uses: google-github-actions/setup-gcloud@v1
         with:
-          e2e_bucket_project_id: '${{ secrets.E2E_BUCKET_PROJECT_ID }}'
+          project_id: '${{ secrets.E2E_BUCKET_PROJECT_ID }}'
           install_components: alpha
   
       - name: Get current date
@@ -104,24 +106,14 @@ jobs:
           currentDate=$(date '+%Y%m%d')
           echo "CURRENT_DATE=$(date '+%Y%m%d')" >> $GITHUB_ENV
 
-      # - name: Upload test results
-      #   uses: google-github-actions/upload-cloud-storage@v1
-      #   with:
-      #     gzip: false
-      #     path: playwright-report/
-      #     destination: >-
-      #       ${{ secrets.E2E_BUCKET_NAME }}/e2e-tests/${{
-      #       env.CURRENT_DATE }}/${{ github.run_id }}/on-demand/
-      #     if: always()
-      #     id: upload_to_bucket
       - name: Upload test results
-        if: always()
-        id: upload_to_bucket
-        run: |
-          currentDate=$(date '+%Y%m%d')
-          currentTime=$(date '+%H:%M')
-          zip -r playwright-all-results-$currentTime.zip test-results/ results.log playwright-report/ /home/runner/.npm/_logs
-          gcloud alpha storage cp playwright-all-results-$currentTime.zip gs://${{ env.BUCKET_NAME }}/${{ github.event.repository.name }}/$currentDate/
+        uses: google-github-actions/upload-cloud-storage@v1
+        with:
+          gzip: false
+          path: playwright-report/
+          destination: >-
+            ${{ secrets.E2E_BUCKET_NAME }}/e2e-tests/${{
+            env.CURRENT_DATE }}/${{ github.run_id }}/on-demand/
 
   announce:
     runs-on: qe-runners
@@ -141,11 +133,3 @@ jobs:
           currentDate=$(date '+%Y%m%d')
           echo "Your artifact is in [this gcp bucket](https://console.cloud.google.com/storage/browser/${{ secrets.E2E_BUCKET_NAME }}/${{ github.event.repository.name }}/$currentDate/) " >> $GITHUB_STEP_SUMMARY
           echo "bucket_link=https://console.cloud.google.com/storage/browser/${{ secrets.E2E_BUCKET_NAME }}/${{ github.event.repository.name }}/$currentDate/" >> $GITHUB_OUTPUT
-
-
-
-
-
-
-
-    
