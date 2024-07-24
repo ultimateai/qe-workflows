@@ -7,10 +7,10 @@ on:
         required: true
         type: string
         description: "Owner and repo name containing your production test like ultimateai/e2e-tests"
-      e2e_bucket_name:
-        required: true
-        type: string
-        description: "Name of bucket in which to store e2e results"
+      # e2e_bucket_name:
+      #   required: true
+      #   type: string
+      #   description: "Name of bucket in which to store e2e results"
       # e2e_bucket_project_id:
       #   required: true
       #   type: string
@@ -22,7 +22,7 @@ on:
 
 env:
   E2E_REPO: ${{ inputs.e2e_repo }}
-  BUCKET_NAME: ${{ inputs.e2e_bucket_name }}
+  # BUCKET_NAME: ${{ inputs.e2e_bucket_name }}
   # E2E_BUCKET_PROJECT_ID: ${{inputs.e2e_bucket_project_id}}
 
 jobs:
@@ -110,7 +110,7 @@ jobs:
           gzip: false
           path: playwright-report/
           destination: >-
-            ${{ env.BUCKET_NAME }}/e2e-tests/${{
+            ${{ secrets.E2E_BUCKET_NAME }}/e2e-tests/${{
             env.CURRENT_DATE }}/${{ github.run_id }}/on-demand/
           if: always()
           id: upload_to_bucket
@@ -131,8 +131,8 @@ jobs:
         id: announcement
         run: |
           currentDate=$(date '+%Y%m%d')
-          echo "Your artifact is in [this gcp bucket](https://console.cloud.google.com/storage/browser/${{ env.BUCKET_NAME }}/${{ github.event.repository.name }}/$currentDate/) " >> $GITHUB_STEP_SUMMARY
-          echo "bucket_link=https://console.cloud.google.com/storage/browser/${{ env.BUCKET_NAME }}/${{ github.event.repository.name }}/$currentDate/" >> $GITHUB_OUTPUT
+          echo "Your artifact is in [this gcp bucket](https://console.cloud.google.com/storage/browser/${{ secrets.E2E_BUCKET_NAME }}/${{ github.event.repository.name }}/$currentDate/) " >> $GITHUB_STEP_SUMMARY
+          echo "bucket_link=https://console.cloud.google.com/storage/browser/${{ secrets.E2E_BUCKET_NAME }}/${{ github.event.repository.name }}/$currentDate/" >> $GITHUB_OUTPUT
 
 
 
