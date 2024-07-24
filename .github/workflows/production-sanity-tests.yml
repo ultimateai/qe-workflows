@@ -82,7 +82,7 @@ jobs:
           #   playwright-report/**
           #   results.json
       - name: List files
-        run: ls -al playwright-report/
+        run: ls -al production-test-report/
 
       - name: Google Auth
         if: always()
