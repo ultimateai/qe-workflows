@@ -99,6 +99,9 @@ jobs:
           destination: >-
             ${{ env.BUCKET_NAME }}/e2e-tests/${{ 
               env.CURRENT_DATE }}/${{ github.run_id }}/on-demand/
+      - name: Debug current date
+        run: |
+          echo "Current Date: ${{ env.CURRENT_DATE }}"
 
   announce:
     runs-on: qe-runners
