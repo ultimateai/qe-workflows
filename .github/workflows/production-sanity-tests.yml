@@ -97,7 +97,7 @@ jobs:
           gzip: false
           path: production-test-report/
           destination: >-
-            ${{ env.BUCKET_NAME }}/e2e-tests/${{ env.CURRENT_DATE }}/${{ github.run_id }}/on-demand/
+            ${{ env.BUCKET_NAME }}/e2e-tests/production-sanity-tests/${{ env.CURRENT_DATE }}/${{ github.run_id }}/on-demand/
 
   announce:
     runs-on: qe-runners
@@ -114,6 +114,5 @@ jobs:
         if: always()
         id: announcement
         run: |
-          currentDate=$(date '+%Y%m%d')
-          echo "Your artifact is in [this gcp bucket](https://console.cloud.google.com/storage/browser/${{ env.BUCKET_NAME }}/e2e-tests/$currentDate/${{ github.run_id }}/on-demand/production-test-report/playwright-report/) " >> $GITHUB_STEP_SUMMARY
-          echo "bucket_link=https://console.cloud.google.com/storage/browser/${{ env.BUCKET_NAME }}/e2e-tests/$currentDate/${{ github.run_id }}/on-demand/production-test-report/playwright-report/" >> $GITHUB_OUTPUT
+          echo "Your artifact is in [this gcp bucket](https://console.cloud.google.com/storage/browser/${{ env.BUCKET_NAME }}/e2e-tests/production-sanity-tests/${{ env.CURRENT_DATE }}/${{ github.run_id }}/on-demand/production-test-report/playwright-report/) " >> $GITHUB_STEP_SUMMARY
+          echo "bucket_link=https://console.cloud.google.com/storage/browser/${{ env.BUCKET_NAME }}/e2e-tests/production-sanity-tests/${{ env.CURRENT_DATE }}/${{ github.run_id }}/on-demand/production-test-report/playwright-report/" >> $GITHUB_OUTPUT
