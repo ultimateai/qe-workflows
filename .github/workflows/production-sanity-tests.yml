@@ -8,9 +8,9 @@ on:
         type: string
         description: "Owner and repo name containing your production test like ultimateai/e2e-tests"
     outputs:
-      bucket_link:
+      report_link:
         description: "The link of the bucket containing the zip with the results"
-        value: ${{ jobs.announce.outputs.bucket_link }}
+        value: ${{ jobs.announce.outputs.report_link }}
 
 env:
   E2E_REPO: ${{ inputs.e2e_repo }}
@@ -104,7 +104,7 @@ jobs:
     needs: upload-report-to-bucket
     if: always()
     outputs:
-      bucket_link: ${{ steps.announcement.outputs.bucket_link }}
+      report_link: ${{ steps.announcement.outputs.report_link }}
     permissions:
       contents: "read"
       id-token: "write"
@@ -116,4 +116,4 @@ jobs:
         run: |
           currentDate=$(date '+%Y%m%d')
           echo "Your artifact is in [this gcp bucket](https://console.cloud.google.com/storage/browser/${{ env.BUCKET_NAME }}/e2e-tests/production-sanity-tests/$currentDate/${{ github.run_id }}/on-demand/production-test-report/playwright-report/) " >> $GITHUB_STEP_SUMMARY
-          echo "bucket_link=https://console.cloud.google.com/storage/browser/${{ env.BUCKET_NAME }}/e2e-tests/production-sanity-tests/$currentDate/${{ github.run_id }}/on-demand/production-test-report/playwright-report/" >> $GITHUB_OUTPUT
+          echo "report_link=https://e2e.ultimate.ai/e2e-tests/production-sanity-tests/$currentDate/${{ github.run_id }}/on-demand/production-test-report/playwright-report/index.html" >> $GITHUB_OUTPUT
