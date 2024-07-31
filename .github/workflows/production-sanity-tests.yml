@@ -116,4 +116,4 @@ jobs:
         run: |
           currentDate=$(date '+%Y%m%d')
           echo "Your artifact is in [this gcp bucket](https://console.cloud.google.com/storage/browser/${{ env.BUCKET_NAME }}/e2e-tests/production-sanity-tests/$currentDate/${{ github.run_id }}/on-demand/production-test-report/playwright-report/) " >> $GITHUB_STEP_SUMMARY
-          echo "report_link=https://e2e.ultimate.ai/e2e-tests/production-sanity-tests/$currentDate/${{ github.run_id }}/on-demand/production-test-report/playwright-report/" >> $GITHUB_OUTPUT
+          echo "report_link=https://e2e.ultimate.ai/e2e-tests/production-sanity-tests/$currentDate/${{ github.run_id }}/on-demand/production-test-report/playwright-report/index.html" >> $GITHUB_OUTPUT
