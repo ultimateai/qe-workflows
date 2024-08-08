@@ -92,12 +92,16 @@ jobs:
           echo "CURRENT_DATE=$(date '+%Y%m%d')" >> $GITHUB_ENV
 
       - name: Upload test results
-        uses: google-github-actions/upload-cloud-storage@v1
+        uses: google-github-actions/upload-cloud-storage@v1.0.2
         with:
           gzip: false
           path: production-test-report/
           destination: >-
             ${{ env.BUCKET_NAME }}/e2e-tests/production-sanity-tests/${{ env.CURRENT_DATE }}/${{ github.run_id }}/on-demand/
+
+      - name: Set Test Result Output
+        id: result
+        run: echo "TEST_RESULT=$(test -s results.json && echo 'success' || echo 'failure')" >> $GITHUB_ENV
 
   announce:
     runs-on: qe-runners
@@ -117,3 +121,4 @@ jobs:
           currentDate=$(date '+%Y%m%d')
           echo "Your artifact is in [this gcp bucket](https://console.cloud.google.com/storage/browser/${{ env.BUCKET_NAME }}/e2e-tests/production-sanity-tests/$currentDate/${{ github.run_id }}/on-demand/production-test-report/playwright-report/) " >> $GITHUB_STEP_SUMMARY
           echo "report_link=https://e2e.ultimate.ai/e2e-tests/production-sanity-tests/$currentDate/${{ github.run_id }}/on-demand/production-test-report/playwright-report/index.html" >> $GITHUB_OUTPUT
+          echo "TEST_RESULT=${{ env.TEST_RESULT }}" >> $GITHUB_ENV
