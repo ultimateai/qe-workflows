@@ -11,10 +11,6 @@ on:
       report_link:
         description: "The link of the bucket containing the zip with the results"
         value: ${{ jobs.announce.outputs.report_link }}
-      test_result:
-        description: "The result of tge sanity test"
-        value: ${{ jobs.upload-report-to-bucket.result }}
-
 env:
   E2E_REPO: ${{ inputs.e2e_repo }}
   BUCKET_NAME: "ultimate-e2e-artifacts"
@@ -28,6 +24,8 @@ jobs:
       id-token: "write"
     strategy:
       fail-fast: false
+    outputs:
+      test_result: ${{ steps.result.outputs.test_result }}
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -58,12 +56,16 @@ jobs:
             playwright-report/**
             results.json
           retention-days: 1
+
+      - name: Set Test Result Output
+        id: result
+        run: |
+          echo "test_result=$(test -s results.json && echo 'success' || echo 'failure')" >> $GITHUB_ENV
+          echo "::set-output name=test_result::$(test -s results.json && echo 'success' || echo 'failure')"
   
   upload-report-to-bucket:
     runs-on: qe-runners
     needs: production-test
-    outputs:
-      test_report: ${{ steps.result.outputs.test_result }}
     permissions:
       contents: "read"
       id-token: "write"
@@ -104,10 +106,6 @@ jobs:
           destination: >-
             ${{ env.BUCKET_NAME }}/e2e-tests/production-sanity-tests/${{ env.CURRENT_DATE }}/${{ github.run_id }}/on-demand/
 
-      - name: Set Test Result Output
-        id: result
-        run: echo "TEST_RESULT=$(test -s results.json && echo 'success' || echo 'failure')" >> $GITHUB_ENV
-
   announce:
     runs-on: qe-runners
     needs: upload-report-to-bucket
@@ -126,4 +124,4 @@ jobs:
           currentDate=$(date '+%Y%m%d')
           echo "Your artifact is in [this gcp bucket](https://console.cloud.google.com/storage/browser/${{ env.BUCKET_NAME }}/e2e-tests/production-sanity-tests/$currentDate/${{ github.run_id }}/on-demand/production-test-report/playwright-report/) " >> $GITHUB_STEP_SUMMARY
           echo "report_link=https://e2e.ultimate.ai/e2e-tests/production-sanity-tests/$currentDate/${{ github.run_id }}/on-demand/production-test-report/playwright-report/index.html" >> $GITHUB_OUTPUT
-          echo "TEST_RESULT=${{ env.TEST_RESULT }}" >> $GITHUB_ENV
+          echo "TEST_RESULT=${{ needs.production-test.outputs.test_result }}" >> $GITHUB_ENV
