@@ -11,6 +11,9 @@ on:
       report_link:
         description: "The link of the bucket containing the zip with the results"
         value: ${{ jobs.announce.outputs.report_link }}
+      test_result:
+        description: "The result of tge sanity test"
+        value: ${{ jobs.upload-report-to-bucket.result }}
 
 env:
   E2E_REPO: ${{ inputs.e2e_repo }}
@@ -59,6 +62,8 @@ jobs:
   upload-report-to-bucket:
     runs-on: qe-runners
     needs: production-test
+    outputs:
+      test_report: ${{ steps.result.outputs.test_result }}
     permissions:
       contents: "read"
       id-token: "write"
