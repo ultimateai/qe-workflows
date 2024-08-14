@@ -50,6 +50,9 @@ jobs:
           DASHBOARD_PRODUCTION_USER_PWD: ${{secrets.DASHBOARD_PRODUCTION_USER_PWD}}
           SLACK_BOT_USER_OAUTH_TOKEN: ${{ secrets.PLAYWRIGHT_SLACK_BOT_USER_OAUTH_TOKEN }}
 
+      - name: List Files
+        run: ls -al
+
       - name: Parse test results
         id: parse_test_results
         run: |
