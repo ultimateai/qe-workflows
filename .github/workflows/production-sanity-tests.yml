@@ -59,8 +59,8 @@ jobs:
           echo "files in playwright-report:"
           ls -al playwright-report/
           
-          echo "files in test-results:"
-          ls -al test-results
+          echo "files in playwright-report/**:"
+          ls -al playwright-report/**
 
       - name: Parse test results
         id: parse_test_results
