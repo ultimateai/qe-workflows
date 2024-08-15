@@ -51,16 +51,10 @@ jobs:
           DASHBOARD_PRODUCTION_USER_PWD: ${{secrets.DASHBOARD_PRODUCTION_USER_PWD}}
           SLACK_BOT_USER_OAUTH_TOKEN: ${{ secrets.PLAYWRIGHT_SLACK_BOT_USER_OAUTH_TOKEN }}
 
-      - name: List Files
+      - name: Search for json
         run: |
-          echo "list files in root:"
-          ls -al
-
-          echo "files in playwright-report:"
-          ls -al playwright-report/
-          
-          echo "files in playwright-report/**:"
-          ls -al playwright-report/**
+          echo "list all json"
+          find . -name "*.json"
 
       - name: Parse test results
         id: parse_test_results
