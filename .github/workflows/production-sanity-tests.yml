@@ -45,19 +45,27 @@ jobs:
       - name: Run tests
         run: |
           PLAYWRIGHT_JSON_OUTPUT_NAME=results.json
-          npx playwright test --project=production --reporter=json=./playwright-report/results.json,html=./playwright-report
+          npx playwright test --project=production --reporter=html,json
           echo "Test results for Production test" > results.log
         env:
           DASHBOARD_PRODUCTION_USER_PWD: ${{secrets.DASHBOARD_PRODUCTION_USER_PWD}}
           SLACK_BOT_USER_OAUTH_TOKEN: ${{ secrets.PLAYWRIGHT_SLACK_BOT_USER_OAUTH_TOKEN }}
 
       - name: List Files
-        run: ls -al playwright-report/
+        run: |
+          echo "list files in root:"
+          ls -al
+
+          echo "files in playwright-report:"
+          ls -al playwright-report/
+          
+          echo "files in test-results:"
+          ls -al test-results
 
       - name: Parse test results
         id: parse_test_results
         run: |
-          report_json=$(cat playwright-report/results.json)
+          report_json=$(cat results.json || cat test-results/results.json)
           passed=$(jq '.summary.passed' <<<"$report_json")
           failed=$(jq '.summary.failed' <<<"$report_json")
           if [ "$failed" -eq 0 ]; then
@@ -69,7 +77,7 @@ jobs:
       - name: Read test result JSON
         id: read_test_results
         run: |
-          report_json=$(cat playwright-report/results.json)
+          report_json=$(cat results.json || cat test-results/results.json)
           echo "test_report_json=$report_json" >> GITHUB_OUTPUT
 
       - name: Upload test report
