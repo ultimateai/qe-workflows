@@ -11,9 +11,7 @@ on:
       report_link:
         description: "The link of the bucket containing the zip with the results"
         value: ${{ jobs.announce.outputs.report_link }}
-      test_result:
-        description: "The result of the tests"
-        value: ${{ jobs.production-test.outputs.test_result }}
+
 env:
   E2E_REPO: ${{ inputs.e2e_repo }}
   BUCKET_NAME: "ultimate-e2e-artifacts"
@@ -27,9 +25,6 @@ jobs:
       id-token: "write"
     strategy:
       fail-fast: false
-    outputs:
-      test_result: ${{ steps.parse_test_results.outputs.test_result }}
-      test_report_json: ${{ steps.read_test_results.outputs.test_report_json }}
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -50,29 +45,6 @@ jobs:
         env:
           DASHBOARD_PRODUCTION_USER_PWD: ${{secrets.DASHBOARD_PRODUCTION_USER_PWD}}
           SLACK_BOT_USER_OAUTH_TOKEN: ${{ secrets.PLAYWRIGHT_SLACK_BOT_USER_OAUTH_TOKEN }}
-
-      - name: Search for json
-        run: |
-          echo "list all json"
-          find . -name "*.json"
-
-      - name: Parse test results
-        id: parse_test_results
-        run: |
-          report_json=$(cat results.json || cat test-results/results.json)
-          passed=$(jq '.summary.passed' <<<"$report_json")
-          failed=$(jq '.summary.failed' <<<"$report_json")
-          if [ "$failed" -eq 0 ]; then
-            echo "test_result=passed" >> $GITHUB_OUTPUT
-          else
-            echo "test_result=failed" >> $GITHUB_OUTPUT
-          fi
-      
-      - name: Read test result JSON
-        id: read_test_results
-        run: |
-          report_json=$(cat results.json || cat test-results/results.json)
-          echo "test_report_json=$report_json" >> GITHUB_OUTPUT
 
       - name: Upload test report
         if: always()
