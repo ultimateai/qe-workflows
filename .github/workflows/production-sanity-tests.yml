@@ -41,8 +41,7 @@ jobs:
         run: |
           touch results.log
           echo '```logtalk' >> results.log
-          PLAYWRIGHT_JSON_OUTPUT_NAME=results.json
-          npx playwright test --project=production --reporter=html,json
+          PLAYWRIGHT_JSON_OUTPUT_NAME=results.json npx playwright test --project=production --reporter=html,json | tee -a results.log
           echo '```' >> results.log
         env:
           DASHBOARD_PRODUCTION_USER_PWD: ${{secrets.DASHBOARD_PRODUCTION_USER_PWD}}
