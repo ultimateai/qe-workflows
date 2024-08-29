@@ -11,6 +11,9 @@ on:
       report_link:
         description: "The link of the bucket containing the zip with the results"
         value: ${{ jobs.announce.outputs.report_link }}
+      test_result:
+        description: "The result of the test to be used in Slack"
+        value: ${{ jobs.production-test.outputs.test_result }}
 
 env:
   E2E_REPO: ${{ inputs.e2e_repo }}
@@ -20,6 +23,8 @@ jobs:
   production-test:
     name: 'Production Sanity Tests'
     runs-on: qe-runners
+    outputs:
+      test_result: ${{ steps.analyse-results.outputs.test_result }}
     permissions:
       contents: "read"
       id-token: "write"
@@ -47,8 +52,16 @@ jobs:
           DASHBOARD_PRODUCTION_USER_PWD: ${{secrets.DASHBOARD_PRODUCTION_USER_PWD}}
           SLACK_BOT_USER_OAUTH_TOKEN: ${{ secrets.PLAYWRIGHT_SLACK_BOT_USER_OAUTH_TOKEN }}
 
-      - name: Output content of result.log
-        run: cat results.log
+      - name: Analyse test result
+        id: analyse-results
+        run: |
+          if grep -q "failed" results.log; then
+            echo "test_result=failed" >> GITHUB_ENV
+            echo "::set-output name=test_result::failed"
+          else
+            echo "test_result=passed" >> GITHUB_ENV
+            echo "::set-output name=test_result:passed"
+          fi
 
       - name: Upload test report
         if: always()
