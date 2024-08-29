@@ -39,12 +39,17 @@ jobs:
         run: npm ci
       - name: Run tests
         run: |
+          touch results.log
+          echo '```logtalk' >> results.log
           PLAYWRIGHT_JSON_OUTPUT_NAME=results.json
           npx playwright test --project=production --reporter=html,json
-          echo "Test results for Production test" > results.log
+          echo '```' >> results.log
         env:
           DASHBOARD_PRODUCTION_USER_PWD: ${{secrets.DASHBOARD_PRODUCTION_USER_PWD}}
           SLACK_BOT_USER_OAUTH_TOKEN: ${{ secrets.PLAYWRIGHT_SLACK_BOT_USER_OAUTH_TOKEN }}
+
+      - name: Output content of result.log
+        run: cat results.log
 
       - name: Upload test report
         if: always()
