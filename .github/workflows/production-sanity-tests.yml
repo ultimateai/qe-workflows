@@ -60,8 +60,8 @@ jobs:
             echo "test_result=failed" >> $GITHUB_ENV
             echo "test_result=failed" >> $GITHUB_OUTPUT
           else
-            echo "test_result=passed" >> $GITHUB_ENV
-            echo "test_result=passed" >> $GITHUB_OUTPUT
+            echo "test_result=success" >> $GITHUB_ENV
+            echo "test_result=success" >> $GITHUB_OUTPUT
           fi
 
       - name: Upload test report
