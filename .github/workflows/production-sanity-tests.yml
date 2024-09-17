@@ -69,17 +69,19 @@ jobs:
       #       echo "test_result=success" >> $GITHUB_ENV
       #     fi
 
+      - name: check for json
+        run:
+          if [ ! -f results.json]; then
+            echo "results.json not found"
+            exit 1
+          fi
+
       - name: Analyse test result
         id: analyse-results
         run: |
           passed=0
           failed=0
           flaky=0
-
-          if [ ! -f results.json]; then
-            echo "results.json not found"
-            exit 1
-          fi
           
           results=$(jq -c '.suites[].suites[].specs[]' results.log)
           for test in $results; do
