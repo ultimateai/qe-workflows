@@ -43,12 +43,19 @@ jobs:
       - name: Install playwright
         run: npm ci
       - name: Run tests
+        # run: |
+        #   touch results.log
+        #   echo '```logtalk' >> results.log
+        #   PLAYWRIGHT_JSON_OUTPUT_NAME=results.json 
+        #   npx playwright test --project=production --reporter=html,json
+        #   echo '```' >> results.log
         run: |
           touch results.log
-          echo '```logtalk' >> results.log
-          PLAYWRIGHT_JSON_OUTPUT_NAME=results.json 
-          npx playwright test --project=production --reporter=html,json
-          echo '```' >> results.log
+          echo '
+          logtalk' >> results.log
+          PLAYWRIGHT_JSON_OUTPUT_NAME=results.json npx playwright test --project=production --reporter=html,json | tee -a results.log
+          echo '
+          ' >> results.log
         env:
           DASHBOARD_PRODUCTION_USER_PWD: ${{secrets.DASHBOARD_PRODUCTION_USER_PWD}}
           SLACK_BOT_USER_OAUTH_TOKEN: ${{ secrets.PLAYWRIGHT_SLACK_BOT_USER_OAUTH_TOKEN }}
@@ -69,6 +76,11 @@ jobs:
           failed=0
           flaky=0
 
+          if [ ! -f results.json]; then
+            echo "results.json not found"
+            exit 1
+          fi
+          
           results=$(jq -c '.suites[].suites[].specs[]' results.log)
           for test in $results; do
 
