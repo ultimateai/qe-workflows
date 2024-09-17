@@ -71,7 +71,7 @@ jobs:
 
       - name: check for json
         run:
-          if [ ! -f results.json]; then
+          if [ ! -f "results.json"]; then
             echo "results.json not found"
             exit 1
           fi
