@@ -43,68 +43,32 @@ jobs:
       - name: Install playwright
         run: npm ci
       - name: Run tests
-        # run: |
-        #   touch results.log
-        #   echo '```logtalk' >> results.log
-        #   PLAYWRIGHT_JSON_OUTPUT_NAME=results.json 
-        #   npx playwright test --project=production --reporter=html,json
-        #   echo '```' >> results.log
         run: |
           touch results.log
-          echo '
-          logtalk' >> results.log
-          PLAYWRIGHT_JSON_OUTPUT_NAME=results.json npx playwright test --project=production --reporter=html,json | tee -a results.log
-          echo '
-          ' >> results.log
+          echo '```logtalk' >> results.log
+          PLAYWRIGHT_JSON_OUTPUT_NAME=results.json             
+          npx playwright test --project=production --reporter=html,json
+          echo '```' >> results.log
         env:
           DASHBOARD_PRODUCTION_USER_PWD: ${{secrets.DASHBOARD_PRODUCTION_USER_PWD}}
           SLACK_BOT_USER_OAUTH_TOKEN: ${{ secrets.PLAYWRIGHT_SLACK_BOT_USER_OAUTH_TOKEN }}
 
-      # - name: Analyse test result
-      #   id: analyse-results
-      #   run: |
+      - name: Generate report
+        run: |
+          npx playwright-slack-report --config="${GITHUB_WORKSPACE}/cli_config.json" --json-results="${GITHUB_WORKSPACE}/results.json"
+
+      - name: Analyse test result
+        id: analyse-results
+        run: |
+          test_result=$(jq -r '.overallStatus' < "${GITHUB_WORKSPACE}/playwright-slack-report-output.json")
+          echo "Test result: $test_result"
+          echo "::set-output name=test_result::${test_result}"
+
       #     if grep -q "failed" results.log; then
       #       echo "test_result=failed" >> $GITHUB_ENV
       #     else
       #       echo "test_result=success" >> $GITHUB_ENV
       #     fi
-
-      - name: check for json
-        run:
-          if [ ! -f "results.json"]; then
-            echo "results.json not found"
-            exit 1
-          fi
-
-      - name: Analyse test result
-        id: analyse-results
-        run: |
-          passed=0
-          failed=0
-          flaky=0
-          
-          results=$(jq -c '.suites[].suites[].specs[]' results.log)
-          for test in $results; do
-
-            id=$(echo "$test" | jq -r '.id')
-            status=$(echo "$test" | jq -r '[.tests[].results[].status] | unique | .[0]')
-
-            if [[ "$status" == "passed" || "$status" == "flaky" ]]; then
-              passed=$((passed + 1))
-            elif [[ "$status" == "failed" ]]; then
-              failed=$((failed + 1))
-            fi
-          done
-
-          echo "Tests passed: $passed"
-          echo "Flaky tests: $flaky"
-          echo "Tests failed: $failed"
-
-          if [[ "$failed" -gt 0 ]]; then
-            echo "test_result=failed" >> $GITHUB_ENV
-          else
-            echo "test_result=success" >> $GITHUB_ENV
-          fi
 
       - name: Upload test report
         if: always()
