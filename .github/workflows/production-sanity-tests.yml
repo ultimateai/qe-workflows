@@ -49,15 +49,12 @@ jobs:
         env:
           DASHBOARD_PRODUCTION_USER_PWD: ${{secrets.DASHBOARD_PRODUCTION_USER_PWD}}
           SLACK_BOT_USER_OAUTH_TOKEN: ${{ secrets.PLAYWRIGHT_SLACK_BOT_USER_OAUTH_TOKEN }}
-          
-      - name: Print directory
-        run: pwd
 
-      - name: List files
-        run: ls -la
-      
-      - name: Search for json
-        run: find . -name "results.json"
+      - name: List files playwright-report
+        run: ls -la playwright-report
+
+      - name: List files test-results
+        run: ls -la test-results
 
       - name: Analyse test result
         id: analyse-results
