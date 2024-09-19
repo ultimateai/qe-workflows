@@ -44,11 +44,8 @@ jobs:
         run: npm ci
       - name: Run tests
         run: |
-          touch results.log
-          echo '```logtalk' >> results.log
-          PLAYWRIGHT_JSON_OUTPUT_NAME=results.json             
-          npx playwright test --project=production --reporter=html,json
-          echo '```' >> results.log
+          PLAYWRIGHT_JSON_OUTPUT_NAME=./results.json             
+          npx playwright test --project=production --reporter=html,json | tee -a results.log
         env:
           DASHBOARD_PRODUCTION_USER_PWD: ${{secrets.DASHBOARD_PRODUCTION_USER_PWD}}
           SLACK_BOT_USER_OAUTH_TOKEN: ${{ secrets.PLAYWRIGHT_SLACK_BOT_USER_OAUTH_TOKEN }}
@@ -56,9 +53,9 @@ jobs:
       - name: Analyse test result
         id: analyse-results
         run: |
-          npx playwright-slack-report --config="./cli_config.json" --json-results="./results.json"
-          overallStatus=$(cat overallStatus)
-          echo "test_result=${overallStatus}" >> GITHUB_ENV
+          report=$(npx playwright-slack-report --config="./cli_config.json" --json-results="./results.json")
+          echo "test_result=$report" >> GITHUB_ENV
+          echo "test_result=$report" >> GITHUB_STEP_SUMMARY
 
       - name: Upload test report
         if: always()
