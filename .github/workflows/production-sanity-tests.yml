@@ -12,7 +12,7 @@ on:
         description: "The link of the bucket containing the zip with the results"
         value: ${{ jobs.announce.outputs.report_link }}
       test_result:
-        description: "The result of the test to be used in Slack"
+        description: "Overall Test Result"
         value: ${{ jobs.production-test.outputs.test_result }}
 
 env:
@@ -50,18 +50,11 @@ jobs:
           DASHBOARD_PRODUCTION_USER_PWD: ${{secrets.DASHBOARD_PRODUCTION_USER_PWD}}
           SLACK_BOT_USER_OAUTH_TOKEN: ${{ secrets.PLAYWRIGHT_SLACK_BOT_USER_OAUTH_TOKEN }}
 
-      - name: List files test-results
-        run: ls -la test-results
-
-      - name: Print the content of last-run.json
-        run: cat test-results/.last-run.json
-
       - name: Analyse test result
         id: analyse-results
         run: |
-          report=$(npx playwright-slack-report --config="./cli_config.json" --json-results="./results.json")
-          echo "test_result=$report" >> GITHUB_ENV
-          echo "test_result=$report" >> GITHUB_STEP_SUMMARY
+          test_result=$(jq -r '.status' test-results/.last-run.json)  
+          echo "test_result=$test_result" >> GITHUB_ENV
 
       - name: Upload test report
         if: always()
