@@ -53,8 +53,11 @@ jobs:
       - name: Analyse test result
         id: analyse-results
         run: |
-          test_result=$(jq -r '.status' test-results/.last-run.json)  
-          echo "test_result=$test_result" >> GITHUB_ENV
+          if grep -q '"status": "failed"' test-result/.last-run.json; then
+            echo "test_result=failed" >> $GITHUB_ENV
+          else
+            echo "test_result=success" >> $GITHUB_ENV
+          fi
 
       - name: Upload test report
         if: always()
