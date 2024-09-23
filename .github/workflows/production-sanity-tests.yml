@@ -59,7 +59,8 @@ jobs:
       - name: Analyse test result
         id: analyse-results
         run: |
-          if grep -q '"status": "failed"' test-results/.last-run.json; then
+          status=$(jq -r '.status' test-results/.last-run.json)
+          if [[ "$status" == "failed" ]]; then
             echo "test_result=failed" >> $GITHUB_ENV
           else
             echo "test_result=success" >> $GITHUB_ENV
