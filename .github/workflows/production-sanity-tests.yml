@@ -50,17 +50,11 @@ jobs:
           DASHBOARD_PRODUCTION_USER_PWD: ${{secrets.DASHBOARD_PRODUCTION_USER_PWD}}
           SLACK_BOT_USER_OAUTH_TOKEN: ${{ secrets.PLAYWRIGHT_SLACK_BOT_USER_OAUTH_TOKEN }}
 
-      - name: see content of test-results folder
-        run: ls -la test-results
-
-      - name: Print last-run content
-        run: cat test-results/.last-run.json
-
       - name: Analyse test result
         id: analyse-results
         run: |
           status=$(jq -r '.status' test-results/.last-run.json)
-          
+
           if [[ "$status" == "failed" ]]; then
             echo "test_result=failed" >> $GITHUB_OUTPUT
           else
