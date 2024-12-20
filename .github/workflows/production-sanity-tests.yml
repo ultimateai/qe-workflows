@@ -63,7 +63,7 @@ jobs:
 
       - name: Upload test report
         if: always()
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: production-test-report
           path: |
@@ -79,7 +79,7 @@ jobs:
       id-token: "write"
     steps:
       - name: Download test reports from GitHub Actions Artifacts
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         with:
           name: production-test-report
           path: production-test-report
@@ -117,7 +117,7 @@ jobs:
       contents: "read"
       id-token: "write"
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - name: Announce in job
         if: always()
         id: announcement
