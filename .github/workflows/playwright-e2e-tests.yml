@@ -23,28 +23,29 @@ on:
 env:
   E2E_REPO: ${{ inputs.e2e_repo }}
   BUCKET_NAME: ${{ inputs.e2e_bucket_name }}
-  actions: "conversation-design-fe"
-  dlb: "conversation-design-fe"
-  ooh: "conversation-design-fe"
-  conversation_logs: "conversation-design-fe"
-  expressions: "creation-fe"
-  entities: "conversation-design-fe"
-  intents: "creation-fe"
-  login: "creation-fe"
-  logout: "creation-fe"
-  automation_replies: "creation-fe"
-  system_replies: "creation-fe"
-  impact_report: "creation-fe"
-  message_training: "creation-fe"
-  training_center: "creation-fe"
-  bot_models: "creation-fe"
-  bot_settings: "creation-fe"
-  bot_creation: "creation-fe"
-  org_management: "creation-fe"
-  chat_automation: "crm"
-  ticket_automation: "crm"
-  integration: "crm"
-  ai_model: "ai-team"
+  actions: "ai-agents-cd-fe"
+  dlb: "ai-agents-cd-fe"
+  ooh: "ai-agents-cd-fe"
+  conversation_logs: "ai-agents-cd-fe"
+  api_integrations: "ai-agents-cd-fe"
+  email_escalation: "ai-agents-cd-fe"
+  intents: "ai-agents-zero-training-fe"
+  expressions: "ai-agents-zero-training-fe"
+  entities: "ai-agents-cd-fe"
+  login: "ai-agents-apss-fe"
+  logout: "ai-agents-zero-training-fe"
+  automation_replies: "ai-agents-zero-training-fe"
+  system_replies: "ai-agents-zero-training-fe"
+  impact_report: "ai-agents-zero-training-fe"
+  message_training: "ai-agents-zero-training-fe"
+  training_center: "ai-agents-zero-training-fe"
+  bot_models: "ai-agents-zero-training-fe"
+  bot_settings: "ai-agents-zero-training-fe"
+  bot_creation: "ai-agents-zero-training-fe"
+  org_management: "ai-agents-apss-fe"
+  self_service: "ai-agents-zero-training-fe"
+  ai_model: "ai-agents-zero-training-fe"
+  insights_fe: "ai-agents-insights-fe"
 
 jobs:
   test:
@@ -59,8 +60,8 @@ jobs:
         shardIndex: [1, 2, 3, 4, 5]
         shardTotal: [5]
     steps:
-      - uses: actions/checkout@v3
-      - uses: actions/setup-node@v3
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
         with:
           node-version-file: ".nvmrc"
       - name: "Checkout e2e tests repository"
@@ -77,17 +78,21 @@ jobs:
           npx playwright test --grep @Critical --project=${{ matrix.project }} --shard=${{ matrix.shardIndex }}/${{ matrix.shardTotal }}
           echo '```' >> results.log
         env:
-          DASHBOARD_STAGING_ADMIN_USER_PWD: ${{ secrets.DASHBOARD_STAGING_ADMIN_USER_PWD }}
-          DASHBOARD_STAGING_CLIENT_USER_PWD: ${{ secrets.DASHBOARD_STAGING_CLIENT_USER_PWD }}
-          DASHBOARD_STAGING_CLIENT_ADMIN_PWD: ${{ secrets.DASHBOARD_STAGING_CLIENT_ADMIN_PWD }}
-          DASHBOARD_STAGING_CLIENT_EDITOR_PWD: ${{ secrets.DASHBOARD_STAGING_CLIENT_EDITOR_PWD }}
-          DASHBOARD_STAGING_PARTNER_PWD: ${{ secrets.DASHBOARD_STAGING_PARTNER_PWD }}
-          FRESHDESK_CONSUMER_PWD: ${{ secrets.FRESHDESK_CONSUMER_PWD }}
-          SLACK_BOT_USER_OAUTH_TOKEN: ${{ secrets.PLAYWRIGHT_SLACK_BOT_USER_OAUTH_TOKEN }}
+          DASHBOARD_STAGING_ADMIN_USER_PWD: "${{ secrets.DASHBOARD_STAGING_ADMIN_USER_PWD }}"
+          DASHBOARD_STAGING_ADMIN_2_USER_PWD: "${{ secrets.DASHBOARD_STAGING_ADMIN_2_USER_PWD }}"
+          DASHBOARD_STAGING_ADMIN_3_USER_PWD: "${{ secrets.DASHBOARD_STAGING_ADMIN_3_USER_PWD }}"
+          DASHBOARD_STAGING_ADMIN_4_USER_PWD: "${{ secrets.DASHBOARD_STAGING_ADMIN_4_USER_PWD }}"
+          DASHBOARD_STAGING_CLIENT_USER_PWD: "${{ secrets.DASHBOARD_STAGING_CLIENT_USER_PWD }}"
+          DASHBOARD_STAGING_CLIENT_ADMIN_PWD: "${{ secrets.DASHBOARD_STAGING_CLIENT_ADMIN_PWD }}"
+          DASHBOARD_STAGING_CLIENT_EDITOR_PWD: "${{ secrets.DASHBOARD_STAGING_CLIENT_EDITOR_PWD }}"
+          DASHBOARD_STAGING_PARTNER_PWD: "${{ secrets.DASHBOARD_STAGING_PARTNER_PWD }}"
+          DASHBOARD_PRODUCTION_USER_PWD: "${{secrets.DASHBOARD_PRODUCTION_USER_PWD}}"
+          FRESHDESK_CONSUMER_PWD: "${{ secrets.FRESHDESK_CONSUMER_PWD }}"
+          SLACK_BOT_USER_OAUTH_TOKEN: "${{ secrets.PLAYWRIGHT_SLACK_BOT_USER_OAUTH_TOKEN }}"
 
       - name: Upload blob (shard) reports to GitHub Actions Artifacts
         if: always()
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: all-blob-reports
           path: blob-report
@@ -101,15 +106,15 @@ jobs:
       contents: "read"
       id-token: "write"
     steps:
-      - uses: actions/checkout@v3
-      - uses: actions/setup-node@v3
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
         with:
           node-version-file: ".nvmrc"
       - name: Install dependencies
         run: npm ci
 
       - name: Download blob reports from GitHub Actions Artifacts
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         with:
           name: all-blob-reports
           path: all-blob-reports
@@ -120,7 +125,7 @@ jobs:
       - name: "Google Auth"
         if: always()
         id: "auth"
-        uses: "google-github-actions/auth@v1"
+        uses: "google-github-actions/auth@v2"
         with:
           token_format: "access_token"
           workload_identity_provider: "${{ secrets.WIF_PROVIDER_NAME }}"
@@ -146,7 +151,7 @@ jobs:
       contents: "read"
       id-token: "write"
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - name: Announce in job
         if: always()
         id: announcement
