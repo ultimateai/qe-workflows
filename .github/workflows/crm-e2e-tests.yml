@@ -54,7 +54,7 @@ jobs:
         run: |
           touch results.log
           echo '```logtalk' >> results.log
-          # npx playwright test --project=${{ matrix.project }} src/crm/integrations/sunshineMessaging.spec.ts --shard=${{ matrix.shardIndex }}/${{ matrix.shardTotal }}
+          npx playwright test --project=${{ matrix.project }} src/crm/integrations/sunshineMessaging.spec.ts --shard=${{ matrix.shardIndex }}/${{ matrix.shardTotal }}
           echo '```' >> results.log
         env:
           DASHBOARD_STAGING_ADMIN_USER_PWD: "${{ secrets.DASHBOARD_STAGING_ADMIN_USER_PWD }}"
