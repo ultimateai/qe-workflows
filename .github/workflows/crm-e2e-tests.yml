@@ -8,6 +8,7 @@ on:
         type: string
         description: "Owner and repo name containing your e2e repo like ultimateai/e2e-tests"
       projects:
+        default: "crm-integration"
         required: true
         type: string
         description: "matrix projects"
