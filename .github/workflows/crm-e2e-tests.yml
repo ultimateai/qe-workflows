@@ -1,0 +1,142 @@
+name: Callable CRM E2E Tests
+
+on:
+  workflow_call:
+    inputs:
+      e2e_repo:
+        required: true
+        type: string
+        description: "Owner and repo name containing your e2e repo like ultimateai/e2e-tests"
+      projects:
+        required: true
+        type: string
+        description: "matrix projects"
+      e2e_bucket_name:
+        required: true
+        type: string
+        description: "Name of bucket in which to store the crm-tests results"
+    outputs:
+      bucket_link:
+        description: "The link of the bucket containing the zip with the results"
+        value: ${{ jobs.announce.outputs.bucket_link }}
+
+env:
+  E2E_REPO: ${{ inputs.e2e_repo }}
+  BUCKET_NAME: ${{ inputs.e2e_bucket_name }}
+  actions: "ai-agents-cd-fe"
+  login: "ai-agents-apss-fe"
+
+jobs:
+  execute-crm-test:
+    runs-on: qe-runners
+    permissions:
+      contents: "read"
+      id-token: "write"
+    strategy:
+      fail-fast: false
+      matrix:
+        project: ${{ fromJSON(inputs.projects) }}
+        shardIndex: [1, 2, 3]
+        shardTotal: [3]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: ".nvmrc"
+      - name: "Checkout e2e tests repository"
+        uses: actions/checkout@v4
+        with:
+          repository: ${{ env.E2E_REPO }}
+          token: ${{ secrets.QE_TOKEN }}
+      - name: Install playwright
+        run: npm ci
+      - name: Run tests
+        run: |
+          touch results.log
+          echo '```logtalk' >> results.log
+          # npx playwright test --project=${{ matrix.project }} src/crm/integrations/sunshineMessaging.spec.ts --shard=${{ matrix.shardIndex }}/${{ matrix.shardTotal }}
+          echo '```' >> results.log
+        env:
+          DASHBOARD_STAGING_ADMIN_USER_PWD: "${{ secrets.DASHBOARD_STAGING_ADMIN_USER_PWD }}"
+          DASHBOARD_STAGING_ADMIN_2_USER_PWD: "${{ secrets.DASHBOARD_STAGING_ADMIN_2_USER_PWD }}"
+          DASHBOARD_STAGING_ADMIN_3_USER_PWD: "${{ secrets.DASHBOARD_STAGING_ADMIN_3_USER_PWD }}"
+          DASHBOARD_STAGING_ADMIN_4_USER_PWD: "${{ secrets.DASHBOARD_STAGING_ADMIN_4_USER_PWD }}"
+          # DASHBOARD_STAGING_CLIENT_USER_PWD: "${{ secrets.DASHBOARD_STAGING_CLIENT_USER_PWD }}"
+          # DASHBOARD_STAGING_CLIENT_ADMIN_PWD: "${{ secrets.DASHBOARD_STAGING_CLIENT_ADMIN_PWD }}"
+          # DASHBOARD_STAGING_CLIENT_EDITOR_PWD: "${{ secrets.DASHBOARD_STAGING_CLIENT_EDITOR_PWD }}"
+          # DASHBOARD_STAGING_PARTNER_PWD: "${{ secrets.DASHBOARD_STAGING_PARTNER_PWD }}"
+          # DASHBOARD_PRODUCTION_USER_PWD: "${{secrets.DASHBOARD_PRODUCTION_USER_PWD}}"
+          # FRESHDESK_CONSUMER_PWD: "${{ secrets.FRESHDESK_CONSUMER_PWD }}"
+          SUNSHINE_MESSAGING_USER_PWD: "${{ secrets.SUNSHINE_MESSAGING_USER_PWD }}"
+          SUNSHINE_GROUP_USER_PWD: "${{ secrets.SUNSHINE_GROUP_USER_PWD }}"
+          SLACK_BOT_USER_OAUTH_TOKEN: "${{ secrets.PLAYWRIGHT_SLACK_BOT_USER_OAUTH_TOKEN }}"
+
+      - name: Upload blob (shard) reports to GitHub Actions Artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: all-blob-reports
+          path: blob-report
+          retention-days: 1
+
+  merge-reports:
+    if: always()
+    needs: execute-crm-test
+    runs-on: qe-runners
+    permissions:
+      contents: "read"
+      id-token: "write"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: ".nvmrc"
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Download blob reports from GitHub Actions Artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: all-blob-reports
+          path: all-blob-reports
+
+      - name: Merge into HTML Report
+        run: npx playwright merge-reports --reporter html ./all-blob-reports
+
+      - name: "Google Auth"
+        if: always()
+        id: "auth"
+        uses: "google-github-actions/auth@v2"
+        with:
+          token_format: "access_token"
+          workload_identity_provider: "${{ secrets.WIF_PROVIDER_NAME }}"
+          service_account: "${{ secrets.GSA_QE_EMAIL }}"
+          project_id: "${{ env.PROJECT_ID }}"
+
+      - name: Upload test results
+        if: always()
+        id: upload_to_bucket
+        run: |
+          currentDate=$(date '+%Y%m%d')
+          currentTime=$(date '+%H:%M')
+          zip -r playwright-all-results-$currentTime.zip test-results/ results.log playwright-report/ /home/runner/.npm/_logs
+          gcloud alpha storage cp playwright-all-results-$currentTime.zip gs://${{ env.BUCKET_NAME }}/${{ github.event.repository.name }}/$currentDate/
+
+  announce:
+    runs-on: qe-runners
+    needs: merge-reports
+    if: always()
+    outputs:
+      bucket_link: ${{ steps.announcement.outputs.bucket_link }}
+    permissions:
+      contents: "read"
+      id-token: "write"
+    steps:
+      - uses: actions/checkout@v4
+      - name: Announce in job
+        if: always()
+        id: announcement
+        run: |
+          currentDate=$(date '+%Y%m%d')
+          echo "Your artifact is in [this gcp bucket](https://console.cloud.google.com/storage/browser/${{ env.BUCKET_NAME }}/${{ github.event.repository.name }}/$currentDate/) " >> $GITHUB_STEP_SUMMARY
+          echo "bucket_link=https://console.cloud.google.com/storage/browser/${{ env.BUCKET_NAME }}/${{ github.event.repository.name }}/$currentDate/" >> $GITHUB_OUTPUT
