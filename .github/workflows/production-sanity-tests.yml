@@ -21,7 +21,7 @@ env:
 
 jobs:
   production-test:
-    name: 'Production Sanity Tests'
+    name: "Production Sanity Tests"
     runs-on: qe-runners
     outputs:
       test_result: ${{ steps.analyse-results.outputs.test_result }}
@@ -70,7 +70,7 @@ jobs:
             playwright-report/**
             results.json
           retention-days: 1
-  
+
   upload-report-to-bucket:
     runs-on: qe-runners
     needs: production-test
@@ -79,7 +79,7 @@ jobs:
       id-token: "write"
     steps:
       - name: Download test reports from GitHub Actions Artifacts
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         with:
           name: production-test-report
           path: production-test-report
@@ -90,10 +90,10 @@ jobs:
         uses: google-github-actions/auth@v2
         with:
           token_format: access_token
-          workload_identity_provider: '${{ secrets.WIF_PROVIDER_NAME }}'
-          service_account: '${{ secrets.GSA_QE_EMAIL }}'
-          project_id: '${{ secrets.E2E_BUCKET_PROJECT_ID }}'
-  
+          workload_identity_provider: "${{ secrets.WIF_PROVIDER_NAME }}"
+          service_account: "${{ secrets.GSA_QE_EMAIL }}"
+          project_id: "${{ secrets.E2E_BUCKET_PROJECT_ID }}"
+
       - name: Get current date
         run: |
           currentDate=$(date '+%Y%m%d')
@@ -117,7 +117,7 @@ jobs:
       contents: "read"
       id-token: "write"
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - name: Announce in job
         if: always()
         id: announcement
