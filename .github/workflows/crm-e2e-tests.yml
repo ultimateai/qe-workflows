@@ -38,8 +38,6 @@ jobs:
       fail-fast: false
       matrix:
         project: ${{ fromJSON(inputs.projects) }}
-        shardIndex: [1]
-        shardTotal: [1]
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -57,7 +55,7 @@ jobs:
         run: |
           touch results.log
           echo '```logtalk' >> results.log
-          npx playwright test --project=${{ matrix.project }} src/crm/integrations/sunshineMessaging.spec.ts --shard=${{ matrix.shardIndex }}/${{ matrix.shardTotal }}
+          npx playwright test --project=${{ matrix.project }} src/crm/integrations/sunshineMessaging.spec.ts
           echo '```' >> results.log
         env:
           DASHBOARD_STAGING_ADMIN_USER_PWD: "${{ secrets.DASHBOARD_STAGING_ADMIN_USER_PWD }}"
@@ -74,49 +72,70 @@ jobs:
           SUNSHINE_GROUP_USER_PWD: "${{ secrets.SUNSHINE_GROUP_USER_PWD }}"
           SLACK_BOT_USER_OAUTH_TOKEN: "${{ secrets.PLAYWRIGHT_SLACK_BOT_USER_OAUTH_TOKEN }}"
 
-      - name: Upload blob (shard) reports to GitHub Actions Artifacts
+      - name: Upload test report
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: crm-blob-reports
-          path: blob-report
+          name: crm-test-report
+          path: report
           retention-days: 1
 
-  merge-reports:
+      # - name: Upload blob (shard) reports to GitHub Actions Artifacts
+      #   if: always()
+      #   uses: actions/upload-artifact@v4
+      #   with:
+      #     name: crm-blob-reports
+      #     path: blob-report
+      #     retention-days: 1
+
+  # merge-reports:
+  #   if: always()
+  #   needs: execute-crm-test
+  #   runs-on: qe-runners
+  #   permissions:
+  #     contents: "read"
+  #     id-token: "write"
+  #   steps:
+  #     - uses: actions/checkout@v4
+  #     - uses: actions/setup-node@v4
+  #       with:
+  #         node-version-file: ".nvmrc"
+
+  upload-reports:
     if: always()
     needs: execute-crm-test
     runs-on: qe-runners
     permissions:
-      contents: "read"
-      id-token: "write"
+      contents: read
+      id-token: write
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@v3
+      - uses: actions/setup-node@v3
         with:
-          node-version-file: ".nvmrc"
+          node-version-file: .nvmrc
       - name: Install dependencies
         run: npm ci
 
-      - name: Download blob reports from GitHub Actions Artifacts
+      - name: Download CRM test reports from GitHub Artifacts
         if: always()
-        id: download_blob_reports
+        id: download_report
         uses: actions/download-artifact@v4
         with:
-          name: crm-blob-reports
-          path: crm-blob-reports
+          name: crm-test-report
+          path: crm-test-report
 
-      - name: Merge into HTML and JSON Report
-        id: merged-reports
-        run: >-
-          PLAYWRIGHT_JSON_OUTPUT_NAME=results.json npx playwright merge-reports --reporter=html,json ./crm-blob-reports
+      # - name: Merge into HTML and JSON Report
+      #   id: merged-reports
+      #   run: >-
+      #     PLAYWRIGHT_JSON_OUTPUT_NAME=results.json npx playwright merge-reports --reporter=html,json ./crm-blob-reports
 
-      - name: Upload merged json report to GitHub Actions Artifacts
-        if: success() || (failure() && steps.merged-reports.outcome == 'success')
-        uses: actions/upload-artifact@v4
-        with:
-          name: merged-report
-          path: results.json
-          retention-days: 1
+      # - name: Upload merged json report to GitHub Actions Artifacts
+      #   if: success() || (failure() && steps.merged-reports.outcome == 'success')
+      #   uses: actions/upload-artifact@v4
+      #   with:
+      #     name: merged-report
+      #     path: results.json
+      #     retention-days: 1
 
       - name: "Google Auth"
         if: always()
@@ -150,20 +169,19 @@ jobs:
       #     zip -r playwright-all-results-$currentTime.zip test-results/ results.log playwright-report/ /home/runner/.npm/_logs
       #     gcloud alpha storage cp playwright-all-results-$currentTime.zip gs://${{ env.BUCKET_NAME }}/${{ github.event.repository.name }}/$currentDate/
 
-      - name: Upload test results
+      - name: Upload CRM test results
         uses: google-github-actions/upload-cloud-storage@v2
         with:
           gzip: false
-          path: playwright-report/
+          path: crm-test-report/
           destination: >-
             ${{ env.BUCKET_NAME }}/${{ github.event.repository.name }}/${{
             env.CURRENT_DATE }}/${{ github.run_id }}/deployment/
-        if: success() || (failure() && steps.merged-reports.outcome == 'success')
-        id: upload_to_bucket
+        if: success() || (failure() && steps.download_report.outcome == 'success')
 
   announce:
     runs-on: qe-runners
-    needs: merge-reports
+    needs: upload-reports
     if: always()
     outputs:
       bucket_link: ${{ steps.announcement.outputs.bucket_link }}
