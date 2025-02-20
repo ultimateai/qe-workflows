@@ -30,6 +30,7 @@ env:
 jobs:
   execute-crm-test:
     runs-on: qe-runners
+    if: ${{ always() }}
     permissions:
       contents: "read"
       id-token: "write"
@@ -123,21 +124,21 @@ jobs:
           zip -r playwright-all-results-$currentTime.zip test-results/ results.log playwright-report/ /home/runner/.npm/_logs
           gcloud alpha storage cp playwright-all-results-$currentTime.zip gs://${{ env.BUCKET_NAME }}/${{ github.event.repository.name }}/$currentDate/
 
-  announce:
-    runs-on: qe-runners
-    needs: merge-reports
-    if: always()
-    outputs:
-      bucket_link: ${{ steps.announcement.outputs.bucket_link }}
-    permissions:
-      contents: "read"
-      id-token: "write"
-    steps:
-      - uses: actions/checkout@v4
-      - name: Announce in job
-        if: always()
-        id: announcement
-        run: |
-          currentDate=$(date '+%Y%m%d')
-          echo "Your artifact is in [this gcp bucket](https://console.cloud.google.com/storage/browser/${{ env.BUCKET_NAME }}/${{ github.event.repository.name }}/$currentDate/) " >> $GITHUB_STEP_SUMMARY
-          echo "bucket_link=https://console.cloud.google.com/storage/browser/${{ env.BUCKET_NAME }}/${{ github.event.repository.name }}/$currentDate/" >> $GITHUB_OUTPUT
+  # announce:
+  #   runs-on: qe-runners
+  #   needs: merge-reports
+  #   if: always()
+  #   outputs:
+  #     bucket_link: ${{ steps.announcement.outputs.bucket_link }}
+  #   permissions:
+  #     contents: "read"
+  #     id-token: "write"
+  #   steps:
+  #     - uses: actions/checkout@v4
+  #     - name: Announce in job
+  #       if: always()
+  #       id: announcement
+  #       run: |
+  #         currentDate=$(date '+%Y%m%d')
+  #         echo "Your artifact is in [this gcp bucket](https://console.cloud.google.com/storage/browser/${{ env.BUCKET_NAME }}/${{ github.event.repository.name }}/$currentDate/) " >> $GITHUB_STEP_SUMMARY
+  #         echo "bucket_link=https://console.cloud.google.com/storage/browser/${{ env.BUCKET_NAME }}/${{ github.event.repository.name }}/$currentDate/" >> $GITHUB_OUTPUT
