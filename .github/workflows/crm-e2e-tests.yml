@@ -53,21 +53,12 @@ jobs:
 
       - name: Run CRM tests
         run: |
-          touch results.log
-          echo '```logtalk' >> results.log
           PLAYWRIGHT_JSON_OUTPUT_NAME=results.json npx playwright test --project=${{ matrix.project }} src/crm/integrations/sunshineMessaging.spec.ts --reporter=html,json
-          echo '```' >> results.log
         env:
           DASHBOARD_STAGING_ADMIN_USER_PWD: "${{ secrets.DASHBOARD_STAGING_ADMIN_USER_PWD }}"
           DASHBOARD_STAGING_ADMIN_2_USER_PWD: "${{ secrets.DASHBOARD_STAGING_ADMIN_2_USER_PWD }}"
           DASHBOARD_STAGING_ADMIN_3_USER_PWD: "${{ secrets.DASHBOARD_STAGING_ADMIN_3_USER_PWD }}"
           DASHBOARD_STAGING_ADMIN_4_USER_PWD: "${{ secrets.DASHBOARD_STAGING_ADMIN_4_USER_PWD }}"
-          # DASHBOARD_STAGING_CLIENT_USER_PWD: "${{ secrets.DASHBOARD_STAGING_CLIENT_USER_PWD }}"
-          # DASHBOARD_STAGING_CLIENT_ADMIN_PWD: "${{ secrets.DASHBOARD_STAGING_CLIENT_ADMIN_PWD }}"
-          # DASHBOARD_STAGING_CLIENT_EDITOR_PWD: "${{ secrets.DASHBOARD_STAGING_CLIENT_EDITOR_PWD }}"
-          # DASHBOARD_STAGING_PARTNER_PWD: "${{ secrets.DASHBOARD_STAGING_PARTNER_PWD }}"
-          # DASHBOARD_PRODUCTION_USER_PWD: "${{secrets.DASHBOARD_PRODUCTION_USER_PWD}}"
-          # FRESHDESK_CONSUMER_PWD: "${{ secrets.FRESHDESK_CONSUMER_PWD }}"
           SUNSHINE_MESSAGING_USER_PWD: "${{ secrets.SUNSHINE_MESSAGING_USER_PWD }}"
           SUNSHINE_GROUP_USER_PWD: "${{ secrets.SUNSHINE_GROUP_USER_PWD }}"
           SLACK_BOT_USER_OAUTH_TOKEN: "${{ secrets.PLAYWRIGHT_SLACK_BOT_USER_OAUTH_TOKEN }}"
@@ -81,27 +72,6 @@ jobs:
             playwright-report/**
             results.json
           retention-days: 1
-
-      # - name: Upload blob (shard) reports to GitHub Actions Artifacts
-      #   if: always()
-      #   uses: actions/upload-artifact@v4
-      #   with:
-      #     name: crm-blob-reports
-      #     path: blob-report
-      #     retention-days: 1
-
-  # merge-reports:
-  #   if: always()
-  #   needs: execute-crm-test
-  #   runs-on: qe-runners
-  #   permissions:
-  #     contents: "read"
-  #     id-token: "write"
-  #   steps:
-  #     - uses: actions/checkout@v4
-  #     - uses: actions/setup-node@v4
-  #       with:
-  #         node-version-file: ".nvmrc"
 
   upload-reports:
     if: always()
@@ -126,19 +96,6 @@ jobs:
           name: crm-test-report
           path: crm-test-report
 
-      # - name: Merge into HTML and JSON Report
-      #   id: merged-reports
-      #   run: >-
-      #     PLAYWRIGHT_JSON_OUTPUT_NAME=results.json npx playwright merge-reports --reporter=html,json ./crm-blob-reports
-
-      # - name: Upload merged json report to GitHub Actions Artifacts
-      #   if: success() || (failure() && steps.merged-reports.outcome == 'success')
-      #   uses: actions/upload-artifact@v4
-      #   with:
-      #     name: merged-report
-      #     path: results.json
-      #     retention-days: 1
-
       - name: "Google Auth"
         if: always()
         id: "auth"
@@ -161,15 +118,6 @@ jobs:
         run: |
           currentDate=$(date '+%Y%m%d')
           echo "CURRENT_DATE=$(date '+%Y%m%d')" >> $GITHUB_ENV
-
-      # - name: Upload test results
-      #   if: always()
-      #   id: upload_to_bucket
-      #   run: |
-      #     currentDate=$(date '+%Y%m%d')
-      #     currentTime=$(date '+%H:%M')
-      #     zip -r playwright-all-results-$currentTime.zip test-results/ results.log playwright-report/ /home/runner/.npm/_logs
-      #     gcloud alpha storage cp playwright-all-results-$currentTime.zip gs://${{ env.BUCKET_NAME }}/${{ github.event.repository.name }}/$currentDate/
 
       - name: Upload CRM test results
         uses: google-github-actions/upload-cloud-storage@v2
