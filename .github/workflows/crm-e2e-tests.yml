@@ -38,8 +38,8 @@ jobs:
       fail-fast: false
       matrix:
         project: ${{ fromJSON(inputs.projects) }}
-        shardIndex: [1, 2, 3]
-        shardTotal: [3]
+        shardIndex: [1]
+        shardTotal: [1]
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -157,7 +157,7 @@ jobs:
           path: playwright-report/
           destination: >-
             ${{ env.BUCKET_NAME }}/${{ github.event.repository.name }}/${{
-            env.CURRENT_DATE }}/${{ github.run_id }}/on-demand/
+            env.CURRENT_DATE }}/${{ github.run_id }}/deployment/
         if: success() || (failure() && steps.merged-reports.outcome == 'success')
         id: upload_to_bucket
 
