@@ -45,14 +45,15 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version-file: ".nvmrc"
-      - name: "Checkout e2e tests repository"
+      - name: "Checkout CRM tests repository"
         uses: actions/checkout@v4
         with:
           repository: ${{ env.E2E_REPO }}
           token: ${{ secrets.QE_TOKEN }}
       - name: Install playwright
         run: npm ci
-      - name: Run tests
+
+      - name: Run CRM tests
         run: |
           touch results.log
           echo '```logtalk' >> results.log
@@ -77,7 +78,7 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: all-blob-reports
+          name: crm-blob-reports
           path: blob-report
           retention-days: 1
 
@@ -97,13 +98,25 @@ jobs:
         run: npm ci
 
       - name: Download blob reports from GitHub Actions Artifacts
+        if: always()
+        id: download_blob_reports
         uses: actions/download-artifact@v4
         with:
-          name: all-blob-reports
-          path: all-blob-reports
+          name: crm-blob-reports
+          path: crm-blob-reports
 
-      - name: Merge into HTML Report
-        run: npx playwright merge-reports --reporter html ./all-blob-reports
+      - name: Merge into HTML and JSON Report
+        id: merged-reports
+        run: >-
+          PLAYWRIGHT_JSON_OUTPUT_NAME=results.json npx playwright merge-reports --reporter=html,json ./crm-blob-reports
+
+      - name: Upload merged json report to GitHub Actions Artifacts
+        if: success() || (failure() && steps.merged-reports.outcome == 'success')
+        uses: actions/upload-artifact@v4
+        with:
+          name: merged-report
+          path: results.json
+          retention-days: 1
 
       - name: "Google Auth"
         if: always()
@@ -115,14 +128,38 @@ jobs:
           service_account: "${{ secrets.GSA_QE_EMAIL }}"
           project_id: "${{ env.PROJECT_ID }}"
 
-      - name: Upload test results
+      - name: Set up Cloud SDK
         if: always()
-        id: upload_to_bucket
+        uses: google-github-actions/setup-gcloud@v1
+        with:
+          project_id: "${{ env.PROJECT_ID }}"
+          install_components: alpha
+
+      - name: Get current date
+        if: always()
         run: |
           currentDate=$(date '+%Y%m%d')
-          currentTime=$(date '+%H:%M')
-          zip -r playwright-all-results-$currentTime.zip test-results/ results.log playwright-report/ /home/runner/.npm/_logs
-          gcloud alpha storage cp playwright-all-results-$currentTime.zip gs://${{ env.BUCKET_NAME }}/${{ github.event.repository.name }}/$currentDate/
+          echo "CURRENT_DATE=$(date '+%Y%m%d')" >> $GITHUB_ENV
+
+      # - name: Upload test results
+      #   if: always()
+      #   id: upload_to_bucket
+      #   run: |
+      #     currentDate=$(date '+%Y%m%d')
+      #     currentTime=$(date '+%H:%M')
+      #     zip -r playwright-all-results-$currentTime.zip test-results/ results.log playwright-report/ /home/runner/.npm/_logs
+      #     gcloud alpha storage cp playwright-all-results-$currentTime.zip gs://${{ env.BUCKET_NAME }}/${{ github.event.repository.name }}/$currentDate/
+
+      - name: Upload test results
+        uses: google-github-actions/upload-cloud-storage@v2
+        with:
+          gzip: false
+          path: playwright-report/
+          destination: >-
+            ${{ env.BUCKET_NAME }}/${{ github.event.repository.name }}/${{
+            env.CURRENT_DATE }}/${{ github.run_id }}/on-demand/
+        if: success() || (failure() && steps.merged-reports.outcome == 'success')
+        id: upload_to_bucket
 
   announce:
     runs-on: qe-runners
