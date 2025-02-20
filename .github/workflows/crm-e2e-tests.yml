@@ -55,7 +55,7 @@ jobs:
         run: |
           touch results.log
           echo '```logtalk' >> results.log
-          npx playwright test --project=${{ matrix.project }} src/crm/integrations/sunshineMessaging.spec.ts
+          PLAYWRIGHT_JSON_OUTPUT_NAME=results.json npx playwright test --project=${{ matrix.project }} src/crm/integrations/sunshineMessaging.spec.ts --reporter=html,json
           echo '```' >> results.log
         env:
           DASHBOARD_STAGING_ADMIN_USER_PWD: "${{ secrets.DASHBOARD_STAGING_ADMIN_USER_PWD }}"
@@ -72,12 +72,14 @@ jobs:
           SUNSHINE_GROUP_USER_PWD: "${{ secrets.SUNSHINE_GROUP_USER_PWD }}"
           SLACK_BOT_USER_OAUTH_TOKEN: "${{ secrets.PLAYWRIGHT_SLACK_BOT_USER_OAUTH_TOKEN }}"
 
-      - name: Upload test report
+      - name: Upload test report to GitHub Actions Artifacts
         if: always()
         uses: actions/upload-artifact@v4
         with:
           name: crm-test-report
-          path: report
+          path: |
+            playwright-report/**
+            results.json
           retention-days: 1
 
       # - name: Upload blob (shard) reports to GitHub Actions Artifacts
