@@ -53,7 +53,7 @@ jobs:
 
       - name: Run CRM tests
         run: |
-          PLAYWRIGHT_JSON_OUTPUT_NAME=results.json npx playwright test --project=${{ matrix.project }} src/crm/integrations/sunshineMessaging.spec.ts --reporter=html,json
+          PLAYWRIGHT_JSON_OUTPUT_NAME=results.json npx playwright test --project=${{ matrix.project }} --reporter=html,json
         env:
           DASHBOARD_STAGING_ADMIN_USER_PWD: "${{ secrets.DASHBOARD_STAGING_ADMIN_USER_PWD }}"
           DASHBOARD_STAGING_ADMIN_2_USER_PWD: "${{ secrets.DASHBOARD_STAGING_ADMIN_2_USER_PWD }}"
