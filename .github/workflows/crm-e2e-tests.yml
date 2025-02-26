@@ -62,6 +62,8 @@ jobs:
           SUNSHINE_MESSAGING_USER_PWD: "${{ secrets.SUNSHINE_MESSAGING_USER_PWD }}"
           SUNSHINE_GROUP_USER_PWD: "${{ secrets.SUNSHINE_GROUP_USER_PWD }}"
           SLACK_BOT_USER_OAUTH_TOKEN: "${{ secrets.PLAYWRIGHT_SLACK_BOT_USER_OAUTH_TOKEN }}"
+          SUNCO_GROUP_AUTHORISATION_SECRET: '${{ secrets.SUNCO_GROUP_AUTHORISATION_SECRET }}'
+          SUNSHINE_AUTHORISATION_SECRET: '${{ secrets.SUNSHINE_AUTHORISATION_SECRET }}'
 
       - name: Upload test report to GitHub Actions Artifacts
         if: always()
