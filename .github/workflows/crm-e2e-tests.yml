@@ -28,7 +28,7 @@ env:
   login: "ai-agents-apss-fe"
 
 jobs:
-  execute-crm-test:
+  crm-test:
     runs-on: qe-runners
     if: ${{ always() }}
     permissions:
@@ -38,6 +38,8 @@ jobs:
       fail-fast: false
       matrix:
         project: ${{ fromJSON(inputs.projects) }}
+        shardIndex: [1, 2, 3]
+        shardTotal: [3]
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -53,7 +55,7 @@ jobs:
 
       - name: Run CRM tests
         run: |
-          PLAYWRIGHT_JSON_OUTPUT_NAME=results.json npx playwright test --project=${{ matrix.project }} --reporter=html,json
+          PLAYWRIGHT_JSON_OUTPUT_NAME=results.json npx playwright test --project=${{ matrix.project }} --shard=${{ matrix.shardIndex }}/${{ matrix.shardTotal }} --reporter=html,json
         env:
           DASHBOARD_STAGING_ADMIN_USER_PWD: "${{ secrets.DASHBOARD_STAGING_ADMIN_USER_PWD }}"
           DASHBOARD_STAGING_ADMIN_2_USER_PWD: "${{ secrets.DASHBOARD_STAGING_ADMIN_2_USER_PWD }}"
@@ -66,38 +68,61 @@ jobs:
           SUNCO_GROUP_AUTHORISATION_SECRET: "${{ secrets.SUNCO_GROUP_AUTHORISATION_SECRET }}"
           SUNSHINE_AUTHORISATION_SECRET: "${{ secrets.SUNSHINE_AUTHORISATION_SECRET }}"
 
-      - name: Upload test report to GitHub Actions Artifacts
+      - name: Upload blob (shard) reports to GitHub Actions Artifacts
+        # - name: Upload test report to GitHub Actions Artifacts
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: crm-test-report
-          path: |
-            playwright-report/**
-            results.json
+          name: crm-blob-reports-${{ matrix.shardIndex }}
+          path: blob-report
           retention-days: 1
+          # name: crm-test-report
+          # path: |
+          #   playwright-report/**
+          #   results.json
+          # retention-days: 1
 
-  upload-reports:
+  merge-reports:
+    # upload-reports:
     if: always()
-    needs: execute-crm-test
+    needs: crm-test
     runs-on: qe-runners
     permissions:
       contents: read
       id-token: write
     steps:
-      - uses: actions/checkout@v3
-      - uses: actions/setup-node@v3
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
         with:
           node-version-file: .nvmrc
       - name: Install dependencies
         run: npm ci
 
-      - name: Download CRM test reports from GitHub Artifacts
+      - name: Download CRM blob reports from GitHub Artifacts
+        # - name: Download CRM test reports from GitHub Artifacts
         if: always()
-        id: download_report
+        id: download_reports
+        # id: download_report
         uses: actions/download-artifact@v4
         with:
-          name: crm-test-report
-          path: crm-test-report
+          # name: crm-test-report
+          # path: crm-test-report
+          pattern: crm-blob-reports-*
+          path: crm-blob-reports
+          merge-multiple: true
+
+      - name: Merge into HTML and JSON Report
+        id: merge-reports
+        if: success() || (failure() && steps.download_reports.outcome == 'success')
+        run: >-
+          PLAYWRIGHT_JSON_OUTPUT_NAME=results.json npx playwright merge-reports
+          --reporter=html,json ./crm-blob-reports
+
+      - name: Upload merged CRM test results to Github Actions Artifacts
+        if: success() || (failure() && steps.merge-reports.outcome == 'success')
+        uses: actions/upload-artifact@v4
+        with:
+          name: crm-test-merged-reports
 
       - name: "Google Auth"
         if: always()
@@ -133,7 +158,8 @@ jobs:
 
   announce:
     runs-on: qe-runners
-    needs: upload-reports
+    needs: merge-reports
+    # needs: upload-reports
     if: always()
     outputs:
       bucket_link: ${{ steps.announcement.outputs.bucket_link }}
