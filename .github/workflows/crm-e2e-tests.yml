@@ -55,7 +55,13 @@ jobs:
 
       - name: Run CRM tests
         run: |
-          PLAYWRIGHT_JSON_OUTPUT_NAME=results.json npx playwright test --project=${{ matrix.project }} --shard=${{ matrix.shardIndex }}/${{ matrix.shardTotal }} --reporter=html,json
+          touch results.log
+          echo '```logtalk' >> results.log
+
+          npx playwright test --config ./playwright.config.ts --project=${{ matrix.project }} --shard=${{
+          matrix.shardIndex }}/${{ matrix.shardTotal }}
+
+          echo '```' >> results.log
         env:
           DASHBOARD_STAGING_ADMIN_USER_PWD: "${{ secrets.DASHBOARD_STAGING_ADMIN_USER_PWD }}"
           DASHBOARD_STAGING_ADMIN_2_USER_PWD: "${{ secrets.DASHBOARD_STAGING_ADMIN_2_USER_PWD }}"
@@ -118,11 +124,13 @@ jobs:
           PLAYWRIGHT_JSON_OUTPUT_NAME=results.json npx playwright merge-reports
           --reporter=html,json ./crm-blob-reports
 
-      - name: Upload merged CRM test results to Github Actions Artifacts
+      - name: Upload merged json report to Github Actions Artifacts
         if: success() || (failure() && steps.merge-reports.outcome == 'success')
         uses: actions/upload-artifact@v4
         with:
-          name: crm-test-merged-reports
+          name: merged-reports
+          path: results.json
+          retention-days: 1
 
       - name: "Google Auth"
         if: always()
