@@ -155,11 +155,12 @@ jobs:
           currentDate=$(date '+%Y%m%d')
           echo "CURRENT_DATE=$(date '+%Y%m%d')" >> $GITHUB_ENV
 
-      - name: Upload CRM test results
+      - name: Upload CRM test results to GCP bucket
+        if: success() || (failure() && steps.merge-reports.outcome == 'success')
         uses: google-github-actions/upload-cloud-storage@v2
         with:
           gzip: false
-          path: crm-test-report/
+          path: playwright-report/
           destination: >-
             ${{ env.BUCKET_NAME }}/${{ github.event.repository.name }}/${{
             env.CURRENT_DATE }}/${{ github.run_id }}/deployment/
