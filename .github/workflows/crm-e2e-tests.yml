@@ -75,21 +75,14 @@ jobs:
           SUNSHINE_AUTHORISATION_SECRET: "${{ secrets.SUNSHINE_AUTHORISATION_SECRET }}"
 
       - name: Upload blob (shard) reports to GitHub Actions Artifacts
-        # - name: Upload test report to GitHub Actions Artifacts
         if: always()
         uses: actions/upload-artifact@v4
         with:
           name: crm-blob-reports-${{ matrix.shardIndex }}
           path: blob-report
           retention-days: 1
-          # name: crm-test-report
-          # path: |
-          #   playwright-report/**
-          #   results.json
-          # retention-days: 1
 
   merge-reports:
-    # upload-reports:
     if: always()
     needs: crm-test
     runs-on: qe-runners
@@ -105,14 +98,10 @@ jobs:
         run: npm ci
 
       - name: Download CRM blob reports from GitHub Artifacts
-        # - name: Download CRM test reports from GitHub Artifacts
         if: always()
         id: download_reports
-        # id: download_report
         uses: actions/download-artifact@v4
         with:
-          # name: crm-test-report
-          # path: crm-test-report
           pattern: crm-blob-reports-*
           path: crm-blob-reports
           merge-multiple: true
@@ -168,7 +157,6 @@ jobs:
   announce:
     runs-on: qe-runners
     needs: merge-reports
-    # needs: upload-reports
     if: always()
     outputs:
       bucket_link: ${{ steps.announcement.outputs.bucket_link }}
