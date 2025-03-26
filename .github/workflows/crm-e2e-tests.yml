@@ -80,6 +80,8 @@ jobs:
           SLACK_BOT_USER_OAUTH_TOKEN: "${{ secrets.PLAYWRIGHT_SLACK_BOT_USER_OAUTH_TOKEN }}"
           SUNCO_GROUP_AUTHORISATION_SECRET: "${{ secrets.SUNCO_GROUP_AUTHORISATION_SECRET }}"
           SUNSHINE_AUTHORISATION_SECRET: "${{ secrets.SUNSHINE_AUTHORISATION_SECRET }}"
+          ZENDESK_SINGLE_TOUCH_USER_PWD: "${{ secrets.ZENDESK_SINGLE_TOUCH_USER_PWD }}"
+          ZENDESK_MULTI_TOUCH_USER_PWD: "${{ secrets.ZENDESK_MULTI_TOUCH_USER_PWD }}"
 
       - name: Upload blob (shard) reports to GitHub Actions Artifacts
         if: always()
