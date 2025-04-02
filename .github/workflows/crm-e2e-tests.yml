@@ -82,6 +82,8 @@ jobs:
           SUNSHINE_AUTHORISATION_SECRET: "${{ secrets.SUNSHINE_AUTHORISATION_SECRET }}"
           ZENDESK_SINGLE_TOUCH_USER_PWD: "${{ secrets.ZENDESK_SINGLE_TOUCH_USER_PWD }}"
           ZENDESK_MULTI_TOUCH_USER_PWD: "${{ secrets.ZENDESK_MULTI_TOUCH_USER_PWD }}"
+          SES_ACCESS_KEY_ID: "${{ secrets.SES_ACCESS_KEY_ID }}"
+          SES_SECRET_ACCESS_KEY: "${{ secrets.SES_SECRET_ACCESS_KEY }}"
 
       - name: Upload blob (shard) reports to GitHub Actions Artifacts
         if: always()
