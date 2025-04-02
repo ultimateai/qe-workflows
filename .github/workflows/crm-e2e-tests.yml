@@ -28,9 +28,30 @@ env:
   login: "ai-agents-apss-fe"
 
 jobs:
-  crm-test:
+  # separate send-email job to avoid sending multiple mails due to sharding in crm-test job
+  send-email:
     runs-on: qe-runners
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+
+      - name: Install required dependencies
+        run: npm install dotenv @aws-sdk/client-ses
+
+      - name: Send support email
+        run: node src/utils/sendEmailTest.js
+        env:
+          SES_ACCESS_KEY_ID: ${{ secrets.SES_ACCESS_KEY_ID }}
+          SES_SECRET_ACCESS_KEY: ${{ secrets.SES_SECRET_ACCESS_KEY }}
+
+  crm-test:
+    needs: send-email
     if: ${{ always() }}
+    runs-on: qe-runners
     permissions:
       contents: "read"
       id-token: "write"
